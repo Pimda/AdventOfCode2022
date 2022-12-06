@@ -1,8 +1,8 @@
 fn main() {
     let moves = parse_input("input.txt");
 
-    println!("answer 1: {}", calculate_part_1(&moves));
-    println!("answer 2: {}", calculate_part_2(&moves));
+    println!("answer 1: {}", part_1(&moves));
+    println!("answer 2: {}", part_2(&moves));
 }
 
 fn parse_input(filename: &str) -> Vec<Vec<String>> {
@@ -13,7 +13,7 @@ fn parse_input(filename: &str) -> Vec<Vec<String>> {
         .collect()
 }
 
-fn calculate_part_1(moves: &[Vec<String>]) -> i32 {
+fn part_1(moves: &[Vec<String>]) -> i32 {
     moves
         .iter()
         .map(|mov| {
@@ -38,7 +38,7 @@ fn calculate_part_1(moves: &[Vec<String>]) -> i32 {
         .sum()
 }
 
-fn calculate_part_2(moves: &[Vec<String>]) -> i32 {
+fn part_2(moves: &[Vec<String>]) -> i32 {
     moves
         .iter()
         .map(|mov| {
@@ -100,11 +100,11 @@ mod tests {
 
     #[test]
     fn part_1_works() {
-        assert_eq!(calculate_part_1(&parse_input("test.txt")), 15);
+        assert_eq!(part_1(&parse_input("test.txt")), 15);
     }
 
     #[test]
     fn part_2_works() {
-        assert_eq!(calculate_part_2(&parse_input("test.txt")), 12);
+        assert_eq!(part_2(&parse_input("test.txt")), 12);
     }
 }
