@@ -17,9 +17,7 @@ fn build_tree_from_file(filename: &str) -> Folder {
 }
 
 fn part_1(root: &Folder) -> u64 {
-    let size_list = root.get_size_list();
-
-    size_list.iter().filter(|f| **f < 100000).sum()
+    root.get_size_list().iter().filter(|f| **f < 100000).sum()
 }
 
 fn part_2(root: &Folder) -> u64 {
@@ -52,18 +50,18 @@ fn handle_commands<'a, 'b, 'c>(
                         ("$", "ls") => {
                             // skip
                         }
-                        ("dir", name) => current_folder.add_folder_if_not_exists(name.to_owned()),
+                        ("dir", name) => current_folder.add_folder_if_not_exists(name),
                         (size, name) => current_folder
                             .files
-                            .push(File::new(name.to_owned(), size.parse::<u64>().unwrap())),
+                            .push(File::new(name, size.parse::<u64>().unwrap())),
                     },
                     ["$", "cd", path] => match path {
                         ".." => {
                             return;
                         }
                         name => {
-                            current_folder.add_folder_if_not_exists(name.to_owned());
-                            let folder = current_folder.get_folder(name.to_owned());
+                            current_folder.add_folder_if_not_exists(name);
+                            let folder = current_folder.get_folder(name);
                             handle_commands(folder, commands)
                         }
                     },
@@ -94,15 +92,15 @@ impl Folder {
         }
     }
 
-    fn with_name(name: String) -> Self {
+    fn with_name(name: &str) -> Self {
         Folder {
-            name,
+            name: name.to_owned(),
             folders: vec![],
             files: vec![],
         }
     }
 
-    fn add_folder_if_not_exists(&mut self, name: String) {
+    fn add_folder_if_not_exists(&mut self, name: &str) {
         let folder = self.folders.iter_mut().find(|f| f.name == name);
 
         match folder {
@@ -114,7 +112,7 @@ impl Folder {
         }
     }
 
-    fn get_folder(&mut self, name: String) -> &mut Folder {
+    fn get_folder(&mut self, name: &str) -> &mut Folder {
         let folder = self.folders.iter_mut().find(|f| f.name == name);
         folder.unwrap()
     }
@@ -134,28 +132,26 @@ impl Folder {
         list
     }
 
-    fn print(&self, depth: usize) {
-        println!("{}- {} (dir)", "  ".repeat(depth), self.name);
+    fn print(&self, depth: usize, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut result = Ok(());
+
+        result = result.and(writeln!(f, "{}- {} (dir)", "  ".repeat(depth), self.name));
 
         for file in &self.files {
-            println!(
-                "{}- {} (file, size={})",
-                "  ".repeat(depth + 1),
-                file.name,
-                file.size
-            );
+            result = result.and(writeln!(f, "{}{}", "  ".repeat(depth + 1), file));
         }
 
         for folder in &self.folders {
-            folder.print(depth + 1);
+            result = result.and(folder.print(depth + 1, f));
         }
+
+        result
     }
 }
 
 impl Display for Folder {
-    fn fmt(&self, _: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.print(0);
-        Ok(())
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.print(0, f)
     }
 }
 
@@ -165,8 +161,14 @@ struct File {
 }
 
 impl File {
-    fn new(name: String, size: u64) -> Self {
-        File { name, size }
+    fn new(name: &str, size: u64) -> Self {
+        File { name : name.to_owned(), size }
+    }
+}
+
+impl Display for File {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "- {} (file, size={})", self.name, self.size)
     }
 }
 
