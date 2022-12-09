@@ -1,3 +1,5 @@
+type KeySelector = dyn Fn(usize, usize) -> (usize, usize);
+
 fn main() {
     let input = read_input("input.txt");
 
@@ -27,10 +29,37 @@ fn part_1(heights: &[Vec<i32>]) -> usize {
     let forward_range: Vec<usize> = (0..size).collect();
     let reverse_range: Vec<usize> = (0..size).rev().collect();
 
-    check_x_direction(&forward_range, &forward_range, heights, &mut visible);
-    check_x_direction(&forward_range, &reverse_range, heights, &mut visible);
-    check_y_direction(&forward_range, &forward_range, heights, &mut visible);
-    check_y_direction(&forward_range, &reverse_range, heights, &mut visible);
+    let first_y_then_x = |outer, inner| (outer, inner);
+    let first_x_then_y = |outer, inner| (inner, outer);
+
+    check_direction(
+        &first_y_then_x,
+        &forward_range,
+        &forward_range,
+        heights,
+        &mut visible,
+    );
+    check_direction(
+        &first_y_then_x,
+        &forward_range,
+        &reverse_range,
+        heights,
+        &mut visible,
+    );
+    check_direction(
+        &first_x_then_y,
+        &forward_range,
+        &forward_range,
+        heights,
+        &mut visible,
+    );
+    check_direction(
+        &first_x_then_y,
+        &forward_range,
+        &reverse_range,
+        heights,
+        &mut visible,
+    );
 
     visible
         .iter()
@@ -38,45 +67,23 @@ fn part_1(heights: &[Vec<i32>]) -> usize {
         .sum()
 }
 
-fn check_x_direction(
-    range_y: &[usize],
-    range_x: &[usize],
+fn check_direction(
+    key_selector: &KeySelector,
+    outer_range: &[usize],
+    inner_range: &[usize],
     heights: &[Vec<i32>],
     visible: &mut [Vec<bool>],
 ) {
-    for y in range_y.iter() {
+    for outer in outer_range.iter() {
         let mut highest = -1;
-        for x in range_x.iter() {
-            check_position(heights, y, x, &mut highest, visible);
+        for inner in inner_range.iter() {
+            let key = key_selector(*outer, *inner);
+            let height = heights[key.0][key.1];
+            if height > highest {
+                visible[key.0][key.1] = true;
+                highest = height;
+            }
         }
-    }
-}
-
-fn check_y_direction(
-    range_x: &[usize],
-    range_y: &[usize],
-    heights: &[Vec<i32>],
-    visible: &mut [Vec<bool>],
-) {
-    for x in range_x.iter() {
-        let mut highest = -1;
-        for y in range_y.iter() {
-            check_position(heights, y, x, &mut highest, visible);
-        }
-    }
-}
-
-fn check_position(
-    heights: &[Vec<i32>],
-    y: &usize,
-    x: &usize,
-    highest: &mut i32,
-    visible: &mut [Vec<bool>],
-) {
-    let height = heights[*y][*x];
-    if height > *highest {
-        visible[*y][*x] = true;
-        *highest = height;
     }
 }
 
@@ -85,19 +92,22 @@ fn part_2(heights: &[Vec<i32>]) -> u32 {
 
     let mut scenic_score = vec![vec![0; size]; size];
 
+    let iterate_x = |variable, fixed| (fixed, variable);
+    let iterate_y = |variable, fixed| (variable, fixed);
+
     for y in 0..size {
         for x in 0..size {
             let height = heights[y][x];
 
-            let left_range = (0..x).rev();
-            let right_range = (x + 1)..size;
-            let up_range = (0..y).rev();
-            let down_range = (y + 1)..size;
+            let look_left = (0..x).rev();
+            let look_right = (x + 1)..size;
+            let look_up = (0..y).rev();
+            let look_down = (y + 1)..size;
 
-            scenic_score[y][x] = iterate_x(left_range, heights, height, y)
-                * iterate_x(right_range, heights, height, y)
-                * iterate_y(up_range, heights, height, x)
-                * iterate_y(down_range, heights, height, x);
+            scenic_score[y][x] = iterate(&iterate_x, look_left, y, heights, height)
+                * iterate(&iterate_x, look_right, y, heights, height)
+                * iterate(&iterate_y, look_up, x, heights, height)
+                * iterate(&iterate_y, look_down, x, heights, height);
         }
     }
 
@@ -108,32 +118,18 @@ fn part_2(heights: &[Vec<i32>]) -> u32 {
         .unwrap()
 }
 
-fn iterate_y(
+fn iterate(
+    key_selector: &KeySelector,
     range: impl Iterator<Item = usize>,
+    fixed: usize,
     heights: &[Vec<i32>],
     height: i32,
-    x: usize,
 ) -> u32 {
     let mut count = 0;
-    for y in range {
+    for variable in range {
         count += 1;
-        if heights[y][x] >= height {
-            break;
-        }
-    }
-    count
-}
-
-fn iterate_x(
-    range: impl Iterator<Item = usize>,
-    heights: &[Vec<i32>],
-    height: i32,
-    y: usize,
-) -> u32 {
-    let mut count = 0;
-    for x in range {
-        count += 1;
-        if heights[y][x] >= height {
+        let key = key_selector(variable, fixed);
+        if heights[key.0][key.1] >= height {
             break;
         }
     }
