@@ -1,5 +1,6 @@
 use std::{
     fmt::Display,
+    io::stdin,
     ops::{Add, Sub},
 };
 
@@ -7,6 +8,7 @@ fn main() {
     let input = read_input("input.txt");
 
     println!("part 1: {}", part_1(&input));
+    println!("part 2: {}", part_2(&input));
 }
 
 fn read_input(filename: &str) -> Vec<Vec<Point>> {
@@ -32,11 +34,9 @@ fn part_1(lines: &Vec<Vec<Point>>) -> u32 {
         lines,
     );
 
-    draw_map(&map);
-
-    let mut number_of_grains = 1;
-
+    let mut number_of_grains = 0;
     let mut current_coordinate = Point { x: 500, y: 0 };
+
     let down = Point { x: 0, y: 1 };
     let left = Point { x: -1, y: 1 };
     let right = Point { x: 1, y: 1 };
@@ -44,8 +44,86 @@ fn part_1(lines: &Vec<Vec<Point>>) -> u32 {
     loop {
         let down = &current_coordinate + &down;
 
-        if down.y >= upper_bound_y + 1{
+        if down.y > upper_bound_y {
             return number_of_grains;
+        }
+
+        if get_element_from_map(&map, &down, &lower_bound_x, &lower_bound_y) == &Tile::Empty {
+            current_coordinate = down;
+            continue;
+        }
+
+        let left = &current_coordinate + &left;
+
+        if left.x < lower_bound_x {
+            return number_of_grains;
+        }
+
+        if get_element_from_map(&map, &left, &lower_bound_x, &lower_bound_y) == &Tile::Empty {
+            current_coordinate = left;
+            continue;
+        }
+
+        let right = &current_coordinate + &right;
+
+        if right.x >= upper_bound_x {
+            return number_of_grains;
+        }
+
+        if get_element_from_map(&map, &right, &lower_bound_x, &lower_bound_y) == &Tile::Empty {
+            current_coordinate = right;
+            continue;
+        }
+
+        set_element_on_map(
+            &mut map,
+            &current_coordinate,
+            &lower_bound_x,
+            &lower_bound_y,
+            Tile::Sand,
+        );
+
+        number_of_grains += 1;
+        current_coordinate = Point { x: 500, y: 0 };
+    }
+}
+
+fn part_2(lines: &Vec<Vec<Point>>) -> u32 {
+    let (lower_bound_x, upper_bound_x, lower_bound_y, upper_bound_y) = get_bounds(lines);
+
+    let height = upper_bound_y - lower_bound_y;
+
+    let lower_bound_x = lower_bound_x - height;
+    let upper_bound_y = upper_bound_y + 1;
+
+    let mut map = generate_map(
+        upper_bound_x + height,
+        lower_bound_x,
+        upper_bound_y,
+        lower_bound_y,
+        lines,
+    );
+
+    let mut number_of_grains = 0;
+    let mut current_coordinate = Point { x: 500, y: 0 };
+
+    let down = Point { x: 0, y: 1 };
+    let left = Point { x: -1, y: 1 };
+    let right = Point { x: 1, y: 1 };
+
+    loop {
+        let down = &current_coordinate + &down;
+
+        if down.y > upper_bound_y {
+            place_grain(
+                &mut map,
+                &mut current_coordinate,
+                lower_bound_x,
+                lower_bound_y,
+                &mut number_of_grains,
+            );
+            //draw_map(&map);
+            continue;
         }
 
         if get_element_from_map(&map, &down, &lower_bound_x, &lower_bound_y) == &Tile::Empty {
@@ -67,17 +145,41 @@ fn part_1(lines: &Vec<Vec<Point>>) -> u32 {
             continue;
         }
 
-        set_element_on_map(&mut map, &current_coordinate, &lower_bound_x, &lower_bound_y, Tile::Sand);
+        place_grain(
+            &mut map,
+            &mut current_coordinate,
+            lower_bound_x,
+            lower_bound_y,
+            &mut number_of_grains,
+        );
+        //draw_map(&map);
 
-        number_of_grains += 1;
-        draw_map(&map);
-        current_coordinate = Point{x: 500, y: 0};
-
+        if get_element_from_map(&map, &current_coordinate, &lower_bound_x, &lower_bound_y) == &Tile::Sand{
+            return number_of_grains
+        }
     }
 }
 
+fn place_grain(
+    map: &mut Vec<Vec<Tile>>,
+    current_coordinate: &mut Point,
+    lower_bound_x: i32,
+    lower_bound_y: i32,
+    number_of_grains: &mut u32,
+) {
+    set_element_on_map(
+        map,
+        current_coordinate,
+        &lower_bound_x,
+        &lower_bound_y,
+        Tile::Sand,
+    );
+    *number_of_grains += 1;
+    *current_coordinate = Point { x: 500, y: 0 };
+}
+
 fn get_element_from_map<'a>(
-    map: &'a Vec<Vec<Tile>>,
+    map: &'a [Vec<Tile>],
     coordinate: &Point,
     x_offset: &i32,
     y_offset: &i32,
@@ -88,11 +190,11 @@ fn get_element_from_map<'a>(
 }
 
 fn set_element_on_map(
-    map: &mut Vec<Vec<Tile>>,
+    map: &mut [Vec<Tile>],
     coordinate: &Point,
     x_offset: &i32,
     y_offset: &i32,
-    tile: Tile
+    tile: Tile,
 ) {
     let y: usize = (coordinate.y - y_offset).try_into().unwrap();
     let x: usize = (coordinate.x - x_offset).try_into().unwrap();
@@ -100,7 +202,7 @@ fn set_element_on_map(
 }
 
 fn draw_map(map: &Vec<Vec<Tile>>) {
-    print! ("\x1B[2J\x1B[1;1H"); 
+    print!("\x1B[2J\x1B[1;1H");
     for line in map {
         for tile in line {
             match tile {
@@ -111,6 +213,8 @@ fn draw_map(map: &Vec<Vec<Tile>>) {
         }
         println!();
     }
+    let mut buff = "".to_owned();
+    _ = stdin().read_line(&mut buff);
 }
 
 fn generate_map(
@@ -127,7 +231,6 @@ fn generate_map(
 
     for line in lines {
         let mut line_iter = line.iter();
-
         let mut from_coordinate = line_iter.next().unwrap();
 
         for to_coordinate in line_iter {
@@ -137,11 +240,25 @@ fn generate_map(
             let mut next;
 
             while current_coordinate != to_coordinate {
-                set_element_on_map(&mut map, current_coordinate, &lower_bound_x, &lower_bound_y, Tile::Rock);
+                set_element_on_map(
+                    &mut map,
+                    current_coordinate,
+                    &lower_bound_x,
+                    &lower_bound_y,
+                    Tile::Rock,
+                );
                 next = current_coordinate + &segment_direction;
 
                 current_coordinate = &next;
             }
+
+            set_element_on_map(
+                &mut map,
+                current_coordinate,
+                &lower_bound_x,
+                &lower_bound_y,
+                Tile::Rock,
+            );
 
             from_coordinate = to_coordinate;
         }
@@ -176,7 +293,7 @@ struct Point {
 
 impl Point {
     fn from_string(string: &str) -> Self {
-        if let [x, y] = string.split(",").collect::<Vec<&str>>()[..] {
+        if let [x, y] = string.split(',').collect::<Vec<&str>>()[..] {
             Self {
                 x: x.parse().unwrap(),
                 y: y.parse().unwrap(),
@@ -242,12 +359,12 @@ mod tests {
     #[test]
     fn part_1_works() {
         let pairs = read_input("test.txt");
-        assert_eq!(part_1(&pairs), 240);
+        assert_eq!(part_1(&pairs), 24);
     }
 
-    // #[test]
-    // fn part_2_works() {
-    //     let mut pairs = read_input("test.txt");
-    //     assert_eq!(part_2(&mut pairs), 140);
-    // }
+    #[test]
+    fn part_2_works() {
+        let pairs = read_input("test.txt");
+        assert_eq!(part_2(&pairs), 93);
+    }
 }
