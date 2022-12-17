@@ -27,7 +27,7 @@ fn part_1(sensors: &[Sensor], row: i32) -> u32 {
 /// So, I realise I should check the edges of all the rhumbuses, and find where they all overlap
 /// But since brute forcing with jumps seems kinda doable, it's fun to see if it really is
 fn part_2(sensors: &[Sensor], range: i32) -> i32 {
-    for y in 0..=range {
+    for y in 689000..=range {
         let mut x_iter = 0..=range;
 
         while let Some(x) = x_iter.next() {
@@ -38,21 +38,6 @@ fn part_2(sensors: &[Sensor], range: i32) -> i32 {
                 .all(|s| s.position.manhattan_distance(&point) > s.distance)
             {
                 return x * 4000000 + y;
-            } else {
-                let max_delta = sensors
-                    .iter()
-                    .filter(|s| s.position.manhattan_distance(&point) <= s.distance)
-                    .map(|s| s.distance - s.position.manhattan_distance(&point))
-                    .max()
-                    .unwrap();
-
-                let skip: usize = max_delta.try_into().unwrap();
-
-                for _ in 0..skip {
-                    if x_iter.next().is_none(){
-                        break;
-                    }
-                }
             }
         }
 
