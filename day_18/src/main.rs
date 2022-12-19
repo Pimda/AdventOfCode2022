@@ -1,6 +1,5 @@
 use std::{
     collections::{HashMap, VecDeque},
-    io::stdin,
 };
 
 type Point = (i32, i32, i32);

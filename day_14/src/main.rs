@@ -201,7 +201,7 @@ fn set_element_on_map(
     map[y][x] = tile
 }
 
-fn draw_map(map: &Vec<Vec<Tile>>) {
+fn _draw_map(map: &Vec<Vec<Tile>>) {
     print!("\x1B[2J\x1B[1;1H");
     for line in map {
         for tile in line {

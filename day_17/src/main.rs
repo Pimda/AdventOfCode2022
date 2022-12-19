@@ -1,9 +1,9 @@
-use std::{collections::HashMap, io::stdin, vec};
+use std::{collections::HashMap, vec};
 
 fn main() {
     let input = read_input("input.txt");
 
-    //println!("part 1: {}", part_1(&input));
+    println!("part 1: {}", part_1(&input));
     println!("part 2: {}", part_2(&input));
 }
 
@@ -48,7 +48,7 @@ fn calculate(directions: &Vec<Direction>, mut total_blocks: i64) -> i64 {
     let height_per_cycle = simulation.0 - simulation.2 .0 - 4;
 
     let test1 = simulate(&directions, start_blocks + 1 * blocks_per_cycle, false);
-    let test2 = simulate(&directions, start_blocks + 2 * blocks_per_cycle, false);
+    let _test2 = simulate(&directions, start_blocks + 2 * blocks_per_cycle, false);
     let test3 = simulate(&directions, start_blocks + 3 * blocks_per_cycle, false);
     let test4 = simulate(&directions, start_blocks + 4 * blocks_per_cycle, false);
     let test5 = simulate(&directions, start_blocks + 5 * blocks_per_cycle, false);
@@ -186,7 +186,7 @@ fn _print(current_highest: &i64, field: &Vec<Vec<bool>>) {
         }
         println!("|")
     }
-    stdin().read_line(&mut "".to_owned());
+    //stdin().read_line(&mut "".to_owned());
 }
 
 fn try_move(
