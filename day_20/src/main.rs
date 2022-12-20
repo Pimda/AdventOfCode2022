@@ -40,19 +40,19 @@ fn create_result_vec(input: &[i64]) -> Vec<(usize, i64)> {
 }
 
 fn perform_cycle(input: &[i64], result: &mut Vec<(usize, i64)>) {
-    let size = input.len();
+    let size = (input.len() - 1) as i64;
 
     for number in input.iter().enumerate() {
         let current_index = result.iter().position(|i| i.0 == number.0).unwrap();
         let moving_item = result.remove(current_index);
         let movement = moving_item.1;
-        let mut new_index = (current_index as i64 + movement) % (size - 1) as i64;
+        let mut new_index = (current_index as i64 + movement) % size;
 
         if new_index == 0 && movement < 0 {
             result.push(moving_item)
         } else {
             if new_index < 0 {
-                new_index += (size - 1) as i64
+                new_index += size
             }
 
             result.insert(new_index as usize, moving_item);
