@@ -11,13 +11,13 @@ fn read_input(filename: &str) -> Vec<i64> {
     string.lines().map(|s| s.parse().unwrap()).collect()
 }
 
-fn part_1(input: &Vec<i64>) -> i64 {
+fn part_1(input: &[i64]) -> i64 {
     let mut result = create_result_vec(input);
     perform_cycle(input, &mut result);
     calculate_result(result)
 }
 
-fn part_2(input: &Vec<i64>) -> i64 {
+fn part_2(input: &[i64]) -> i64 {
     let key = 811589153;
     let input: Vec<i64> = input.iter().map(|v| v * key).collect();
 
@@ -26,12 +26,12 @@ fn part_2(input: &Vec<i64>) -> i64 {
     for _ in 0..10{
         perform_cycle(&input, &mut result);
     }
-    
+
     calculate_result(result)
 }
 
 ///result contains the original indexes and the corresponding values
-fn create_result_vec(input: &Vec<i64>) -> Vec<(usize, i64)> {
+fn create_result_vec(input: &[i64]) -> Vec<(usize, i64)> {
     input
         .iter()
         .enumerate()
@@ -39,7 +39,7 @@ fn create_result_vec(input: &Vec<i64>) -> Vec<(usize, i64)> {
         .collect()
 }
 
-fn perform_cycle(input: &Vec<i64>, result: &mut Vec<(usize, i64)>) {
+fn perform_cycle(input: &[i64], result: &mut Vec<(usize, i64)>) {
     let size = input.len();
 
     for number in input.iter().enumerate() {
@@ -52,7 +52,7 @@ fn perform_cycle(input: &Vec<i64>, result: &mut Vec<(usize, i64)>) {
             result.push(moving_item)
         } else {
             if new_index < 0 {
-                new_index = (size - 1) as i64 + new_index;
+                new_index += (size - 1) as i64
             }
 
             result.insert(new_index as usize, moving_item);
