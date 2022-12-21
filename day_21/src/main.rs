@@ -1,52 +1,122 @@
+use core::panic;
+use std::fmt::Display;
+
 fn main() {
     let input = read_input("input.txt");
 
     println!("Part 1: {}", part_1(&input));
-    println!("Part 2: {}", part_2(&input));
+    println!("Part 2: {}", part_2(input));
 }
 
 fn read_input(filename: &str) -> Vec<Monkey> {
     let string = std::fs::read_to_string(filename).expect("File not found");
-    string.lines().map(|m| Monkey::from_string(m)).collect()
+    string.lines().map(Monkey::from_string).collect()
 }
 
-fn part_1(monkeys: &Vec<Monkey> ) -> i64 {
-
-    calculate_tree(&build_tree(monkeys, "root"))
+fn part_1(monkeys: &[Monkey]) -> i64 {
+    let Node::Leaf(Some(result)) = wrap_up_from_bottom(&build_tree(monkeys, "root")) else{panic!()};
+    result
 }
 
-fn part_2(monkeys: &Vec<Monkey> ) -> i64 {
-    0
+fn part_2(mut monkeys: Vec<Monkey>) -> i64 {
+    // change the humn monkey to type Human
+    monkeys.iter_mut().find(|m| m.id == "humn").unwrap()._type = MonkeyType::Human;
+
+    let root = wrap_up_from_bottom(&build_tree(&monkeys, "root"));
+
+    if let Node::Node(left, _, right) = root {
+        match (*left, *right) {
+            (node @ Node::Node(_, _, _), Node::Leaf(Some(val)))
+            | (Node::Leaf(Some(val)), node @ Node::Node(_, _, _)) => {
+                return wrap_up_from_top(node, val)
+            }
+            _ => panic!(),
+        }
+    }
+
+    panic!()
 }
 
-fn build_tree(monkeys: &Vec<Monkey>, key: &str) -> Node{
-
+fn build_tree(monkeys: &[Monkey], key: &str) -> Node {
     let monkey = monkeys.iter().find(|m| m.id == key).unwrap();
 
-    match &monkey._type{
+    match &monkey._type {
         MonkeyType::Value(v) => Node::Leaf(*v),
-        MonkeyType::Calculation(calculation) => {
-            Node::Node(Box::new(build_tree(monkeys, &calculation.lhs)), calculation.operator.clone(), Box::new(build_tree(monkeys, &calculation.rhs)))
-        },
+        MonkeyType::Calculation(calculation) => Node::Node(
+            Box::new(build_tree(monkeys, &calculation.lhs)),
+            calculation.operator.clone(),
+            Box::new(build_tree(monkeys, &calculation.rhs)),
+        ),
+        MonkeyType::Human => Node::Leaf(None),
     }
 }
 
-fn calculate_tree(node: &Node) -> i64{
-    match node{
-        Node::Node(lhs, op, rhs) => {
-            let left = calculate_tree(lhs);
-            let right = calculate_tree(rhs);
-
-            match op.as_str(){
-                "+" => left + right,
-                "-" => left - right,
-                "/" => left / right,
-                "*" => left * right,
-                _ => panic!()
+fn wrap_up_from_bottom(node: &Node) -> Node {
+    match node {
+        Node::Node(lhs, op, rhs) => match (wrap_up_from_bottom(lhs), wrap_up_from_bottom(rhs)) {
+            (Node::Leaf(Some(left_val)), Node::Leaf(Some(right_val))) => {
+                Node::Leaf(match op.as_str() {
+                    "+" => Some(left_val + right_val),
+                    "-" => Some(left_val - right_val),
+                    "/" => Some(left_val / right_val),
+                    "*" => Some(left_val * right_val),
+                    _ => panic!(),
+                })
             }
+            (Node::Node(_, _, _), Node::Node(_, _, _)) => panic!(),
+            (left, right) => Node::Node(Box::new(left), op.to_owned(), Box::new(right)),
         },
-        Node::Leaf(v) => *v,
+        Node::Leaf(v) => Node::Leaf(*v),
     }
+}
+
+fn wrap_up_from_top(node: Node, target_value: i64) -> i64 {
+    //node needs to be equal to value
+
+    if let Node::Node(left, op, right) = node {
+        match (*left, *right) {
+            (Node::Leaf(Some(left_val)), node @ Node::Node(_, _, _)) => {
+                let value = calculate_value_for_known_left(op, target_value, left_val);
+                return wrap_up_from_top(node, value);
+            }
+            (node @ Node::Node(_, _, _), Node::Leaf(Some(right_val))) => {
+                let value = calculate_value_for_known_right(op, target_value, right_val);
+                return wrap_up_from_top(node, value);
+            }
+            (Node::Leaf(Some(left_val)), Node::Leaf(None)) => {
+                return calculate_value_for_known_left(op, target_value, left_val)
+            }
+            (Node::Leaf(None), Node::Leaf(Some(right_val))) => {
+                return calculate_value_for_known_right(op, target_value, right_val)
+            }
+
+            _ => panic!(),
+        }
+    }
+
+    panic!()
+}
+
+fn calculate_value_for_known_right(op: String, target_value: i64, right_val: i64) -> i64 {
+    let value = match op.as_str() {
+        "+" => target_value - right_val,
+        "-" => target_value + right_val,
+        "/" => target_value * right_val,
+        "*" => target_value / right_val,
+        _ => panic!(),
+    };
+    value
+}
+
+fn calculate_value_for_known_left(op: String, target_value: i64, left_val: i64) -> i64 {
+    let value = match op.as_str() {
+        "+" => target_value - left_val,
+        "-" => left_val - target_value,
+        "/" => left_val / target_value,
+        "*" => target_value / left_val,
+        _ => panic!(),
+    };
+    value
 }
 
 struct Monkey {
@@ -58,19 +128,23 @@ impl Monkey {
     fn from_string(string: &str) -> Self {
         let [id, value] = string.split(": ").collect::<Vec<&str>>()[..] else {panic!()};
 
-        Self { id: id.to_owned(), _type: MonkeyType::from_string(value) }
+        Self {
+            id: id.to_owned(),
+            _type: MonkeyType::from_string(value),
+        }
     }
 }
 
 enum MonkeyType {
-    Value(i64),
+    Value(Option<i64>),
     Calculation(Calculation),
+    Human,
 }
 
 impl MonkeyType {
     fn from_string(string: &str) -> Self {
         match string.split(' ').collect::<Vec<&str>>()[..] {
-            [val] => MonkeyType::Value(val.parse().unwrap()),
+            [val] => MonkeyType::Value(Some(val.parse().unwrap())),
             [lhs, op, rhs] => MonkeyType::Calculation(Calculation::from_parts(lhs, op, rhs)),
             _ => panic!(),
         }
@@ -93,9 +167,27 @@ impl Calculation {
     }
 }
 
-enum Node{
+enum Node {
     Node(Box<Node>, String, Box<Node>),
-    Leaf(i64)
+    Leaf(Option<i64>),
+}
+
+impl Display for Node {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Node::Node(_, _, _) => "node".to_owned(),
+                Node::Leaf(val) => {
+                    match val {
+                        Some(v) => v.to_string(),
+                        None => "none".to_owned(),
+                    }
+                }
+            }
+        )
+    }
 }
 
 #[cfg(test)]
@@ -105,12 +197,12 @@ mod tests {
     #[test]
     fn part_1_works() {
         let input = read_input("test.txt");
-        assert_eq!(part_1(&input), -1);
+        assert_eq!(part_1(&input), 152);
     }
 
     #[test]
     fn part_2_works() {
         let nodes = read_input("test.txt");
-        assert_eq!(part_2(&nodes), -1);
+        assert_eq!(part_2(nodes), 301);
     }
 }
