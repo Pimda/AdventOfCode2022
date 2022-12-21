@@ -25,15 +25,12 @@ fn part_2(mut monkeys: Vec<Monkey>) -> i64 {
     let root = wrap_up_from_bottom(&build_tree(&monkeys, "root"));
 
     if let Node::Node(left, _, right) = root {
-        match (*left, *right) {
-            (node @ Node::Node(_, _, _), Node::Leaf(Some(val)))
-            | (Node::Leaf(Some(val)), node @ Node::Node(_, _, _)) => {
-                return wrap_up_from_top(node, val)
-            }
-            _ => panic!(),
+        if let (node @ Node::Node(_, _, _), Node::Leaf(Some(val)))
+        | (Node::Leaf(Some(val)), node @ Node::Node(_, _, _)) = (*left, *right)
+        {
+            return wrap_up_from_top(node, val);
         }
     }
-
     panic!()
 }
 
@@ -55,13 +52,7 @@ fn wrap_up_from_bottom(node: &Node) -> Node {
     match node {
         Node::Node(lhs, op, rhs) => match (wrap_up_from_bottom(lhs), wrap_up_from_bottom(rhs)) {
             (Node::Leaf(Some(left_val)), Node::Leaf(Some(right_val))) => {
-                Node::Leaf(match op.as_str() {
-                    "+" => Some(left_val + right_val),
-                    "-" => Some(left_val - right_val),
-                    "/" => Some(left_val / right_val),
-                    "*" => Some(left_val * right_val),
-                    _ => panic!(),
-                })
+                calculate_value_both_known(op, left_val, right_val)
             }
             (Node::Node(_, _, _), Node::Node(_, _, _)) => panic!(),
             (left, right) => Node::Node(Box::new(left), op.to_owned(), Box::new(right)),
@@ -70,9 +61,18 @@ fn wrap_up_from_bottom(node: &Node) -> Node {
     }
 }
 
+fn calculate_value_both_known(op: &str, left_val: i64, right_val: i64) -> Node {
+    Node::Leaf(match op {
+        "+" => Some(left_val + right_val),
+        "-" => Some(left_val - right_val),
+        "/" => Some(left_val / right_val),
+        "*" => Some(left_val * right_val),
+        _ => panic!(),
+    })
+}
+
 fn wrap_up_from_top(node: Node, target_value: i64) -> i64 {
     //node needs to be equal to value
-
     if let Node::Node(left, op, right) = node {
         match (*left, *right) {
             (Node::Leaf(Some(left_val)), node @ Node::Node(_, _, _)) => {
@@ -89,7 +89,6 @@ fn wrap_up_from_top(node: Node, target_value: i64) -> i64 {
             (Node::Leaf(None), Node::Leaf(Some(right_val))) => {
                 return calculate_value_for_known_right(op, target_value, right_val)
             }
-
             _ => panic!(),
         }
     }
@@ -98,25 +97,23 @@ fn wrap_up_from_top(node: Node, target_value: i64) -> i64 {
 }
 
 fn calculate_value_for_known_right(op: String, target_value: i64, right_val: i64) -> i64 {
-    let value = match op.as_str() {
+    match op.as_str() {
         "+" => target_value - right_val,
         "-" => target_value + right_val,
         "/" => target_value * right_val,
         "*" => target_value / right_val,
         _ => panic!(),
-    };
-    value
+    }
 }
 
 fn calculate_value_for_known_left(op: String, target_value: i64, left_val: i64) -> i64 {
-    let value = match op.as_str() {
+    match op.as_str() {
         "+" => target_value - left_val,
         "-" => left_val - target_value,
         "/" => left_val / target_value,
         "*" => target_value / left_val,
         _ => panic!(),
-    };
-    value
+    }
 }
 
 struct Monkey {
