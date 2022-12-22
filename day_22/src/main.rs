@@ -29,16 +29,21 @@ fn fill_map_to_square(mut map: Vec<String>) -> Vec<String> {
 }
 
 fn part_1(map: &[String], moves: &str) -> usize {
+    walk_path(map, moves, false)
+}
+
+fn part_2(map: &[String], moves: &str) -> usize {
+    walk_path(map, moves, true)
+}
+
+fn walk_path(map: &[String], moves: &str, cube: bool) -> usize {
     let directions = get_directions();
     let (width, height) = get_map_size(map);
-
     let mut current_direction = 0i32;
     let start_x = find_first_available_start_x(map);
     let start_y = 0;
-
     let mut current_point = (start_x, start_y);
     let mut steps_string = "".to_owned();
-
     for _move in moves.chars() {
         match _move {
             'R' => {
@@ -50,6 +55,7 @@ fn part_1(map: &[String], moves: &str) -> usize {
                     map,
                     width,
                     height,
+                    cube,
                 );
                 current_direction = (current_direction + 1) % 4
             }
@@ -62,13 +68,13 @@ fn part_1(map: &[String], moves: &str) -> usize {
                     map,
                     width,
                     height,
+                    cube,
                 );
                 current_direction = (current_direction - 1) % 4
             }
             char => steps_string.push(char),
         }
     }
-
     calculate_score(current_point, current_direction)
 }
 
@@ -107,6 +113,7 @@ fn walk(
     map: &[String],
     width: i32,
     height: i32,
+    cube: bool,
 ) {
     if steps_string.is_empty() {
         return;
@@ -115,7 +122,7 @@ fn walk(
     let steps: i32 = steps_string.parse().unwrap();
     for _ in 0..steps {
         let mut next_point =
-            add_points(current_point, directions, current_direction, width, height);
+            calculate_next_point(current_point, directions, current_direction, width, height);
 
         match map[next_point.1].chars().nth(next_point.0).unwrap() {
             ' ' => {
@@ -127,6 +134,7 @@ fn walk(
                     height,
                     map,
                     current_point,
+                    cube,
                 ) {
                     break;
                 }
@@ -148,9 +156,11 @@ fn find_wrappd_position(
     height: i32,
     map: &[String],
     current_point: &mut (usize, usize),
+    cube: bool,
 ) -> bool {
     loop {
-        *next_point = add_points(next_point, directions, current_direction, width, height);
+        *next_point =
+            calculate_next_point(next_point, directions, current_direction, width, height);
 
         match map[next_point.1].chars().nth(next_point.0).unwrap() {
             ' ' => (),
@@ -165,7 +175,7 @@ fn find_wrappd_position(
     true
 }
 
-fn add_points(
+fn calculate_next_point(
     point: &mut (usize, usize),
     directions: &[(i32, i32)],
     current_direction: i32,
@@ -177,10 +187,6 @@ fn add_points(
     let y = (height + point.1 as i32 + directions[direction_index].1) % height;
 
     (x as usize, y as usize)
-}
-
-fn part_2(map: &[String], moves: &str) -> i32 {
-    0
 }
 
 #[cfg(test)]
