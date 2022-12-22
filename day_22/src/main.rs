@@ -51,7 +51,7 @@ fn walk_path(map: &[String], moves: &str, cube: bool) -> usize {
                     &mut steps_string,
                     &mut current_point,
                     &directions,
-                    current_direction,
+                    &mut current_direction,
                     map,
                     width,
                     height,
@@ -64,7 +64,7 @@ fn walk_path(map: &[String], moves: &str, cube: bool) -> usize {
                     &mut steps_string,
                     &mut current_point,
                     &directions,
-                    current_direction,
+                    &mut current_direction,
                     map,
                     width,
                     height,
@@ -109,7 +109,7 @@ fn walk(
     steps_string: &mut String,
     current_point: &mut (usize, usize),
     directions: &[(i32, i32)],
-    current_direction: i32,
+    current_direction: &mut i32,
     map: &[String],
     width: i32,
     height: i32,
@@ -151,7 +151,7 @@ fn walk(
 fn find_wrappd_position(
     next_point: &mut (usize, usize),
     directions: &[(i32, i32)],
-    current_direction: i32,
+    current_direction: &mut i32,
     width: i32,
     height: i32,
     map: &[String],
@@ -163,7 +163,11 @@ fn find_wrappd_position(
             calculate_next_point(next_point, directions, current_direction, width, height);
 
         match map[next_point.1].chars().nth(next_point.0).unwrap() {
-            ' ' => (),
+            ' ' => {
+                if cube {
+                    wrap_cube(next_point, current_point, current_direction)
+                }
+            }
             '#' => return false,
             '.' => {
                 *current_point = *next_point;
@@ -175,10 +179,21 @@ fn find_wrappd_position(
     true
 }
 
+fn wrap_cube(
+    next_point: &(usize, usize),
+    current_point: &mut (usize, usize),
+    current_direction: &mut i32,
+) {
+    if next_point.0 == 0 && next_point.1 < 50{
+        *current_point = (99, 149 - next_point.1);
+        *current_direction = ((*current_direction + 2 + 4) % 4) as i32;
+    }
+}
+
 fn calculate_next_point(
     point: &mut (usize, usize),
     directions: &[(i32, i32)],
-    current_direction: i32,
+    current_direction: &i32,
     width: i32,
     height: i32,
 ) -> (usize, usize) {
