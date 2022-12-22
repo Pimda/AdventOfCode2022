@@ -1,3 +1,5 @@
+use std::io::stdin;
+
 fn main() {
     let input = read_input("input.txt");
 
@@ -44,7 +46,10 @@ fn walk_path(map: &[String], moves: &str, cube: bool) -> usize {
     let start_y = 0;
     let mut current_point = (start_x, start_y);
     let mut steps_string = "".to_owned();
-    for _move in moves.chars() {
+    for (move_index, _move) in moves.chars().enumerate() {
+
+        println!("At move: {}", move_index);
+
         match _move {
             'R' => {
                 walk(
@@ -165,7 +170,7 @@ fn find_wrappd_position(
         match map[next_point.1].chars().nth(next_point.0).unwrap() {
             ' ' => {
                 if cube {
-                    wrap_cube(next_point, current_point, current_direction)
+                    return wrap_cube(map, current_point, current_direction);
                 }
             }
             '#' => return false,
@@ -180,13 +185,33 @@ fn find_wrappd_position(
 }
 
 fn wrap_cube(
-    next_point: &(usize, usize),
+    map: &[String],
     current_point: &mut (usize, usize),
     current_direction: &mut i32,
-) {
-    if next_point.0 == 0 && next_point.1 < 50{
-        *current_point = (99, 149 - next_point.1);
-        *current_direction = ((*current_direction + 2 + 4) % 4) as i32;
+) -> bool {
+
+    println!("I'm at ({},{}), heading: {}", current_point.0, current_point.1, current_direction);
+
+    let mut next_point = (current_point.0, current_point.1);
+    let mut new_direction = *current_direction;
+
+    if current_point.1 == 0 && current_point.0 >= 50 && current_point.0 < 150{
+        next_point = (0, current_point.1 + 150 - 50);
+        new_direction = 0;
+    }
+    else{
+        panic!("no mapping for position");
+    }
+
+
+    match map[next_point.1].chars().nth(next_point.0).unwrap() {
+        '#' => return false,
+        '.' => {
+            *current_point = next_point;
+            *current_direction = new_direction;
+            return true
+        }
+        _ => panic!("unexpected value"),
     }
 }
 
