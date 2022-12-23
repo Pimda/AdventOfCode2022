@@ -3,7 +3,7 @@ use std::io::stdin;
 fn main() {
     let input = read_input("input.txt");
 
-    println!("Part 1: {}", part_1(&input.0, &input.1));
+    //println!("Part 1: {}", part_1(&input.0, &input.1));
     println!("Part 2: {}", part_2(&input.0, &input.1));
 }
 
@@ -47,8 +47,7 @@ fn walk_path(map: &[String], moves: &str, cube: bool) -> usize {
     let mut current_point = (start_x, start_y);
     let mut steps_string = "".to_owned();
     for (move_index, _move) in moves.chars().enumerate() {
-
-        println!("At move: {}", move_index);
+        println!("Move: {}", move_index);
 
         match _move {
             'R' => {
@@ -189,27 +188,132 @@ fn wrap_cube(
     current_point: &mut (usize, usize),
     current_direction: &mut i32,
 ) -> bool {
+    *current_direction = (*current_direction % 4 + 4) % 4;
 
-    println!("I'm at ({},{}), heading: {}", current_point.0, current_point.1, current_direction);
+    println!(
+        "I'm at ({},{}), heading: {}",
+        current_point.0, current_point.1, current_direction
+    );
 
-    let mut next_point = (current_point.0, current_point.1);
-    let mut new_direction = *current_direction;
+    let next_point;
+    let new_direction;
 
-    if current_point.1 == 0 && current_point.0 >= 50 && current_point.0 < 150{
-        next_point = (0, current_point.1 + 150 - 50);
+    if current_point.0 == 50
+        && current_point.1 >= 0
+        && current_point.1 < 50
+        && *current_direction == 2
+    {
+        println!("block 1");
+        next_point = (0, 50 - current_point.1 + 99);
         new_direction = 0;
-    }
-    else{
+    } else if current_point.1 == 0
+        && current_point.0 >= 50
+        && current_point.0 < 100
+        && *current_direction == 3
+    {
+        println!("block 2");
+        next_point = (0, current_point.0 - 50 + 150);
+        new_direction = 0;
+    } else if current_point.1 == 149 && current_point.0 >= 50 && current_point.0 < 100 {
+        println!("block 3");
+        next_point = (49, current_point.0 - 50 + 150);
+        new_direction = 2;
+    } else if current_point.0 == 0 && current_point.1 >= 100 && current_point.1 < 150 {
+        println!("block 4");
+        next_point = (50, 150 - current_point.1);
+        new_direction = 0;
+    } else if current_point.0 == 0 && current_point.1 >= 150 && current_point.1 < 200 {
+        println!("block 5");
+        next_point = (current_point.1 - 150 + 50, 0);
+        new_direction = 1;
+    } else if current_point.0 == 50 && current_point.1 >= 50 && current_point.1 < 100 {
+        println!("block 6");
+        next_point = (current_point.1 - 50, 100);
+        new_direction = 1;
+    } else if current_point.1 == 100 && current_point.0 >= 0 && current_point.0 < 50 {
+        println!("block 7");
+        next_point = (50, 50 + current_point.0);
+        new_direction = 0;
+    } else if current_point.0 == 99 && current_point.1 >= 100 && current_point.1 < 150 {
+        println!("block 8");
+        next_point = (149, 50 - (current_point.1 - 100));
+        new_direction = 2;
+    } else if current_point.1 == 49 && current_point.0 >= 100 && current_point.0 < 150 {
+        println!("block 9");
+        next_point = (99, current_point.0 - 50);
+        new_direction = 2;
+    } else if current_point.0 == 99 && current_point.1 >= 50 && current_point.1 < 100 {
+        println!("block 10");
+        next_point = (current_point.1 + 50, 49);
+        new_direction = 3;
+    } else if current_point.0 == 149 && current_point.1 >= 0 && current_point.1 < 50 {
+        println!("block 11");
+        next_point = (99, 150 - current_point.1);
+        new_direction = 2;
+    } else if current_point.1 == 0 && current_point.0 >= 100 && current_point.0 < 150 {
+        println!("block 12");
+        next_point = (current_point.0 - 100, 199);
+        new_direction = 3;
+    } else if current_point.0 == 50 && current_point.1 >= 0 && current_point.1 < 50 {
+        println!("block 13");
+        next_point = (0, 150 - current_point.1);
+        new_direction = 0;
+    } else if current_point.0 == 49 && current_point.1 >= 150 && current_point.1 < 200 {
+        println!("block 14");
+        next_point = (current_point.1 - 100, 149);
+        new_direction = 3;
+    } else if current_point.1 == 199 && current_point.0 >= 0 && current_point.0 < 50 {
+        println!("block 15");
+        next_point = (current_point.0 + 100, 0);
+        new_direction = 1;
+    } else {
         panic!("no mapping for position");
     }
-
 
     match map[next_point.1].chars().nth(next_point.0).unwrap() {
         '#' => return false,
         '.' => {
+            for (y, line) in map.iter().enumerate() {
+                for (x, char) in line.chars().enumerate() {
+                    if current_point.0 == x && current_point.1 == y {
+                        match ((*current_direction % 4) + 4) % 4 {
+                            0 => print!(">"),
+                            1 => print!("V"),
+                            2 => print!("<"),
+                            3 => print!("^"),
+                            _ => panic!(),
+                        }
+                    } else if next_point.0 == x && next_point.1 == y {
+                        match ((new_direction % 4) + 4) % 4 {
+                            0 => print!(">"),
+                            1 => print!("V"),
+                            2 => print!("<"),
+                            3 => print!("^"),
+                            _ => panic!(),
+                        }
+                    } else {
+                        if char == '.'{
+                            print!(" ");
+                        }
+                        else{
+                            print!("{}", char);
+                        }
+                    }
+                }
+                println!();
+            }
+
+            stdin().read_line(&mut "".to_owned());
+
             *current_point = next_point;
             *current_direction = new_direction;
-            return true
+
+            println!(
+                "Continuing at position: ({},{}), with heading: {}",
+                current_point.0, current_point.1, current_direction
+            );
+
+            return true;
         }
         _ => panic!("unexpected value"),
     }
