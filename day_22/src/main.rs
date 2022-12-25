@@ -203,55 +203,55 @@ fn wrap_cube(
         && current_point.1 < 50
         && *current_direction == 2
     {
-        println!("block 1");
-        next_point = (0, 50 - current_point.1 + 99);
+        println!("block 1 - verified twice");
+        next_point = (0, 149 - current_point.1);
         new_direction = 0;
     } else if current_point.1 == 0
         && current_point.0 >= 50
         && current_point.0 < 100
         && *current_direction == 3
     {
-        println!("block 2");
-        next_point = (0, current_point.0 - 50 + 150);
+        println!("block 2 - verified twice");
+        next_point = (0, current_point.0 + 100);
         new_direction = 0;
     } else if current_point.1 == 149 && current_point.0 >= 50 && current_point.0 < 100 {
-        println!("block 3");
-        next_point = (49, current_point.0 - 50 + 150);
+        println!("block 3 - verified twice");
+        next_point = (49, current_point.0 + 100);
         new_direction = 2;
-    } else if current_point.0 == 0 && current_point.1 >= 100 && current_point.1 < 150 {
+    } else if current_point.0 == 0 && current_point.1 >= 100 && current_point.1 < 150 && *current_direction == 3 {
         println!("block 4");
         next_point = (50, 150 - current_point.1);
         new_direction = 0;
     } else if current_point.0 == 0 && current_point.1 >= 150 && current_point.1 < 200 {
-        println!("block 5");
-        next_point = (current_point.1 - 150 + 50, 0);
+        println!("block 5 - verified twice");
+        next_point = (current_point.1 - 100, 0);
         new_direction = 1;
     } else if current_point.0 == 50 && current_point.1 >= 50 && current_point.1 < 100 {
-        println!("block 6");
+        println!("block 6 - verified twice");
         next_point = (current_point.1 - 50, 100);
         new_direction = 1;
     } else if current_point.1 == 100 && current_point.0 >= 0 && current_point.0 < 50 {
-        println!("block 7");
-        next_point = (50, 50 + current_point.0);
+        println!("block 7 - verified twice");
+        next_point = (50, current_point.0 + 50);
         new_direction = 0;
     } else if current_point.0 == 99 && current_point.1 >= 100 && current_point.1 < 150 {
-        println!("block 8");
-        next_point = (149, 50 - (current_point.1 - 100));
+        println!("block 8 - verified twice");
+        next_point = (149, 49 - (current_point.1- 100));
         new_direction = 2;
     } else if current_point.1 == 49 && current_point.0 >= 100 && current_point.0 < 150 {
-        println!("block 9");
+        println!("block 9 - verified twice");
         next_point = (99, current_point.0 - 50);
         new_direction = 2;
     } else if current_point.0 == 99 && current_point.1 >= 50 && current_point.1 < 100 {
-        println!("block 10");
+        println!("block 10 - verified twice");
         next_point = (current_point.1 + 50, 49);
         new_direction = 3;
     } else if current_point.0 == 149 && current_point.1 >= 0 && current_point.1 < 50 {
-        println!("block 11");
-        next_point = (99, 150 - current_point.1);
+        println!("block 11 - verified twice");
+        next_point = (99, 149 - current_point.1);
         new_direction = 2;
     } else if current_point.1 == 0 && current_point.0 >= 100 && current_point.0 < 150 {
-        println!("block 12");
+        println!("block 12 - verified twice");
         next_point = (current_point.0 - 100, 199);
         new_direction = 3;
     } else if current_point.0 == 50 && current_point.1 >= 0 && current_point.1 < 50 {
@@ -259,13 +259,17 @@ fn wrap_cube(
         next_point = (0, 150 - current_point.1);
         new_direction = 0;
     } else if current_point.0 == 49 && current_point.1 >= 150 && current_point.1 < 200 {
-        println!("block 14");
+        println!("block 14 - verified twice");
         next_point = (current_point.1 - 100, 149);
         new_direction = 3;
     } else if current_point.1 == 199 && current_point.0 >= 0 && current_point.0 < 50 {
-        println!("block 15");
+        println!("block 15 - verified twice");
         next_point = (current_point.0 + 100, 0);
         new_direction = 1;
+    }else if current_point.0 == 0 && current_point.1 >= 100 && current_point.1 < 150 && *current_direction == 2 {
+        println!("block 16 - verified twice");
+        next_point = (50, 49 - (current_point.1 - 100));
+        new_direction = 0;
     } else {
         panic!("no mapping for position");
     }
@@ -273,35 +277,13 @@ fn wrap_cube(
     match map[next_point.1].chars().nth(next_point.0).unwrap() {
         '#' => return false,
         '.' => {
-            for (y, line) in map.iter().enumerate() {
-                for (x, char) in line.chars().enumerate() {
-                    if current_point.0 == x && current_point.1 == y {
-                        match ((*current_direction % 4) + 4) % 4 {
-                            0 => print!(">"),
-                            1 => print!("V"),
-                            2 => print!("<"),
-                            3 => print!("^"),
-                            _ => panic!(),
-                        }
-                    } else if next_point.0 == x && next_point.1 == y {
-                        match ((new_direction % 4) + 4) % 4 {
-                            0 => print!(">"),
-                            1 => print!("V"),
-                            2 => print!("<"),
-                            3 => print!("^"),
-                            _ => panic!(),
-                        }
-                    } else {
-                        if char == '.'{
-                            print!(" ");
-                        }
-                        else{
-                            print!("{}", char);
-                        }
-                    }
-                }
-                println!();
-            }
+            draw_map(
+                map,
+                current_point,
+                current_direction,
+                next_point,
+                new_direction,
+            );
 
             stdin().read_line(&mut "".to_owned());
 
@@ -316,6 +298,53 @@ fn wrap_cube(
             return true;
         }
         _ => panic!("unexpected value"),
+    }
+}
+
+fn draw_map(
+    map: &[String],
+    current_point: &mut (usize, usize),
+    current_direction: &mut i32,
+    next_point: (usize, usize),
+    new_direction: i32,
+) {
+    for (y, line) in map.iter().enumerate() {
+        if (y + 1) % 50 != 0 && y % 50 != 0{
+            if current_point.1 != y && next_point.1 != y{
+                continue;
+            }
+        } 
+        for (x, char) in line.chars().enumerate() {
+            if (x + 1) % 50 != 0 && x % 50 != 0{
+                if current_point.0 != x && next_point.0 != x{
+                    continue;
+                }
+            } 
+            if current_point.0 == x && current_point.1 == y {
+                match ((*current_direction % 4) + 4) % 4 {
+                    0 => print!(">"),
+                    1 => print!("V"),
+                    2 => print!("<"),
+                    3 => print!("^"),
+                    _ => panic!(),
+                }
+            } else if next_point.0 == x && next_point.1 == y {
+                match ((new_direction % 4) + 4) % 4 {
+                    0 => print!(">"),
+                    1 => print!("V"),
+                    2 => print!("<"),
+                    3 => print!("^"),
+                    _ => panic!(),
+                }
+            } else {
+                if char == '.' {
+                    print!(".");
+                } else {
+                    print!("{}", char);
+                }
+            }
+        }
+        println!();
     }
 }
 
