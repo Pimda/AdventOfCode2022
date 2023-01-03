@@ -1,4 +1,5 @@
 use std::collections::{HashMap, VecDeque};
+use core::hash::Hash;
 
 pub enum DirectionalCollection<T> {
     Bfs(VecDeque<T>),
@@ -43,32 +44,32 @@ impl<T> DirectionalCollection<T> {
     }
 }
 
-pub struct PriorityQueue<T> {
-    bins: HashMap<i32, VecDeque<T>>,
+pub struct PriorityQueue<K, T> {
+    bins: HashMap<K, VecDeque<T>>,
 }
 
-impl<T> PriorityQueue<T> {
+impl<K, T> PriorityQueue<K, T> {
     pub fn new() -> Self {
         Self {
             bins: HashMap::new(),
         }
     }
 
-    pub fn push(&mut self, item: T, score: i32) {
+    pub fn push(&mut self, item: T, score: K) where K: Eq + Hash {
         self.bins.entry(score).or_default().push_back(item);
     }
 
-    pub fn pop_lowest(&mut self) -> Option<T> {
+    pub fn pop_lowest(&mut self) -> Option<T> where K: Ord + Hash + Copy{
         let Some(lowest_key) = self.bins.keys().min() else{return None};
         self.pop(*lowest_key)
     }
 
-    pub fn pop_highest(&mut self) -> Option<T> {
+    pub fn pop_highest(&mut self) -> Option<T> where K: Ord + Hash + Copy{
         let Some(highest_key) = self.bins.keys().max() else{return None};
         self.pop(*highest_key)
     }
 
-    fn pop(&mut self, key: i32) -> Option<T> {
+    fn pop(&mut self, key: K) -> Option<T> where K: Eq + Hash{
         let maybe_bin = self.bins.get_mut(&key);
         match maybe_bin {
             Some(bin) => {
@@ -83,7 +84,7 @@ impl<T> PriorityQueue<T> {
     }
 }
 
-impl<T> Default for PriorityQueue<T>{
+impl<K, T> Default for PriorityQueue<K, T>{
     fn default() -> Self {
         Self::new()
     }
