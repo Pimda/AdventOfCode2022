@@ -1,16 +1,17 @@
-use std::io::stdin;
+extern crate aoc_helper;
+use aoc_helper::{math, point2d::Point2D, upoint2d::UPoint2D};
 
 fn main() {
     let input = read_input("input.txt");
 
-    //println!("Part 1: {}", part_1(&input.0, &input.1));
+    println!("Part 1: {}", part_1(&input.0, &input.1));
     println!("Part 2: {}", part_2(&input.0, &input.1, 50));
 }
 
 fn read_input(filename: &str) -> (Vec<String>, String) {
     let string = std::fs::read_to_string(filename).expect("File not found");
     let lines = string.lines().collect::<Vec<&str>>();
-    let [map, moves] = lines[..].split(|l| l.is_empty()).collect::<Vec<&[&str]>>()[..] else {panic!()};
+    let [map, moves] = lines[..].split(|l| l.is_empty()).collect::<Vec<&[&str]>>()[..] else {panic!("Input not valid")};
     let map: Vec<String> = map.iter().map(|s| s.to_owned().to_owned()).collect();
     let square_map = fill_map_to_square(map);
 
@@ -19,7 +20,8 @@ fn read_input(filename: &str) -> (Vec<String>, String) {
 
 fn fill_map_to_square(mut map: Vec<String>) -> Vec<String> {
     let width = map.iter().map(|l| l.len()).max().unwrap() + 1;
-    let mut map = map.iter_mut()
+    let mut map = map
+        .iter_mut()
         .map(|l| {
             if l.len() < width {
                 *l += &" ".repeat(width - l.len());
@@ -28,7 +30,7 @@ fn fill_map_to_square(mut map: Vec<String>) -> Vec<String> {
         })
         .collect::<Vec<String>>();
 
-    for i in map.len()..width{
+    for _ in map.len()..width {
         map.push(" ".repeat(width))
     }
 
@@ -39,19 +41,19 @@ fn part_1(map: &[String], moves: &str) -> usize {
     walk_path(map, moves, false, 0)
 }
 
-fn part_2(map: &[String], moves: &str, map_size: i32) -> usize {
+fn part_2(map: &[String], moves: &str, map_size: u32) -> usize {
     walk_path(map, moves, true, map_size)
 }
 
-fn walk_path(map: &[String], moves: &str, cube: bool, map_size: i32) -> usize {
+fn walk_path(map: &[String], moves: &str, cube: bool, tile_size: u32) -> usize {
     let directions = get_directions();
-    let (width, height) = get_map_size(map);
+    let map_size = get_map_size(map);
     let mut current_direction = 0i32;
     let start_x = find_first_available_start_x(map);
     let start_y = 0;
-    let mut current_point = (start_x, start_y);
+    let mut current_point = UPoint2D::new(start_x, start_y);
     let mut steps_string = "".to_owned();
-    for (move_index, _move) in moves.chars().enumerate() {
+    for (_, _move) in moves.chars().enumerate() {
         match _move {
             'R' => {
                 walk(
@@ -60,12 +62,12 @@ fn walk_path(map: &[String], moves: &str, cube: bool, map_size: i32) -> usize {
                     &directions,
                     &mut current_direction,
                     map,
-                    width,
-                    height,
+                    &map_size,
                     cube,
-                    map_size,
+                    tile_size,
                 );
-                current_direction = (current_direction + 1) % 4
+
+                current_direction = math::positive_mod(current_direction + 1, 4);
             }
             'L' => {
                 walk(
@@ -74,12 +76,11 @@ fn walk_path(map: &[String], moves: &str, cube: bool, map_size: i32) -> usize {
                     &directions,
                     &mut current_direction,
                     map,
-                    width,
-                    height,
+                    &map_size,
                     cube,
-                    map_size,
+                    tile_size,
                 );
-                current_direction = (current_direction - 1) % 4
+                current_direction = math::positive_mod(current_direction - 1, 4);
             }
             char => steps_string.push(char),
         }
@@ -91,53 +92,54 @@ fn walk_path(map: &[String], moves: &str, cube: bool, map_size: i32) -> usize {
         &directions,
         &mut current_direction,
         map,
-        width,
-        height,
+        &map_size,
         cube,
-        map_size,
+        tile_size,
     );
 
     calculate_score(current_point, current_direction)
 }
 
-fn calculate_score(current_point: (usize, usize), current_direction: i32) -> usize {
-    println!("Position: ({}, {})", current_point.0 + 1, current_point.1 + 1);
-    1000 * (current_point.1 + 1) + 4 * (current_point.0 + 1) + (current_direction % 4) as usize
+fn calculate_score(current_point: UPoint2D, current_direction: i32) -> usize {
+    1000 * (current_point.y + 1) + 4 * (current_point.x + 1) + current_direction as usize
 }
 
 fn find_first_available_start_x(map: &[String]) -> usize {
-    let mut x = 0;
-
-    for (index, char) in map.first().unwrap().chars().enumerate() {
-        if char == '.' {
-            x = index;
-            break;
-        }
-    }
-
-    x
+    map.first()
+        .expect("map should always have a first row")
+        .chars()
+        .enumerate()
+        .filter(|(_, char)| *char == '.')
+        .next()
+        .expect("no start position found")
+        .0
 }
 
-fn get_map_size(map: &[String]) -> (i32, i32) {
-    let height = map.len() as i32;
-    let width = map.first().unwrap().chars().count() as i32;
-    (width, height)
+fn get_map_size(map: &[String]) -> Point2D {
+    Point2D::new(
+        map.first().unwrap().chars().count() as i32,
+        map.len() as i32,
+    )
 }
 
-fn get_directions() -> Vec<(i32, i32)> {
-    vec![(1, 0), (0, 1), (-1, 0), (0, -1)]
+fn get_directions() -> Vec<Point2D> {
+    vec![
+        Point2D::new(1, 0),
+        Point2D::new(0, 1),
+        Point2D::new(-1, 0),
+        Point2D::new(0, -1),
+    ]
 }
 
 fn walk(
     steps_string: &mut String,
-    current_point: &mut (usize, usize),
-    directions: &[(i32, i32)],
+    current_point: &mut UPoint2D,
+    directions: &[Point2D],
     current_direction: &mut i32,
     map: &[String],
-    width: i32,
-    height: i32,
+    map_size: &Point2D,
     cube: bool,
-    map_size: i32,
+    tile_size: u32,
 ) {
     if steps_string.is_empty() {
         return;
@@ -146,27 +148,25 @@ fn walk(
     let steps: i32 = steps_string.parse().unwrap();
     for _ in 0..steps {
         let mut next_point =
-            calculate_next_point(current_point, directions, current_direction, width, height);
+            calculate_next_point(current_point, directions, current_direction, map_size);
 
-        match map[next_point.1].chars().nth(next_point.0).unwrap() {
+        match map[next_point.y].chars().nth(next_point.x).unwrap() {
             ' ' => {
                 if !find_wrappd_position(
                     &mut next_point,
                     directions,
                     current_direction,
-                    width,
-                    height,
+                    map_size,
                     map,
                     current_point,
                     cube,
-                    map_size,
+                    tile_size,
                 ) {
                     break;
                 }
             }
             '.' => {
                 *current_point = next_point;
-                draw_map(map, current_point, current_direction, (1000, 1000), 0);
             }
             '#' => break,
             _ => panic!("unexpected value"),
@@ -177,24 +177,22 @@ fn walk(
 }
 
 fn find_wrappd_position(
-    next_point: &mut (usize, usize),
-    directions: &[(i32, i32)],
+    next_point: &mut UPoint2D,
+    directions: &[Point2D],
     current_direction: &mut i32,
-    width: i32,
-    height: i32,
+    map_size: &Point2D,
     map: &[String],
-    current_point: &mut (usize, usize),
+    current_point: &mut UPoint2D,
     cube: bool,
-    map_size: i32,
+    tile_size: u32,
 ) -> bool {
     loop {
-        *next_point =
-            calculate_next_point(next_point, directions, current_direction, width, height);
+        *next_point = calculate_next_point(next_point, directions, current_direction, map_size);
 
-        match map[next_point.1].chars().nth(next_point.0).unwrap() {
+        match map[next_point.y].chars().nth(next_point.x).unwrap() {
             ' ' => {
                 if cube {
-                    return wrap_cube(map, current_point, current_direction, map_size);
+                    return wrap_cube(map, current_point, current_direction, tile_size);
                 }
             }
             '#' => return false,
@@ -210,48 +208,28 @@ fn find_wrappd_position(
 
 fn wrap_cube(
     map: &[String],
-    current_point: &mut (usize, usize),
+    current_point: &mut UPoint2D,
     current_direction: &mut i32,
-    map_size: i32,
+    tile_size: u32,
 ) -> bool {
-    let tile_index = (
-        current_point.0 as i32 / map_size,
-        current_point.1 as i32 / map_size,
-    );
-    let position_in_tile = (
-        current_point.0 as i32 - tile_index.0 as i32 * map_size,
-        current_point.1 as i32 - tile_index.1 as i32 * map_size,
-    );
+    let tile_index = *current_point / tile_size;
+    let position_in_tile = (*current_point - tile_index * tile_size).as_upoint2d();
 
-    println!(
-        "I'm at tile index: ({},{}), facing {}",
-        tile_index.0, tile_index.1, current_direction
-    );
+    let (new_tile_index, new_direction) = find_new_tile(tile_index, current_direction);
 
-    let (new_tile_index, new_direction) =
-        find_new_tile(map, map_size, tile_index, current_direction);
+    let rotation = math::positive_mod(*current_direction - new_direction, 4);
+    let offset = tile_size as i32 - 1;
 
-    let rotation = ((*current_direction - new_direction) % 4 + 4) % 4;
-    let offset = map_size - 1;
-
-    let mut offset_position = (
-        position_in_tile.0 as i32 * 2 - offset,
-        position_in_tile.1 as i32 * 2 - offset,
-    );
+    let mut offset_position = position_in_tile * 2 - offset;
 
     for _ in 0..rotation {
-        offset_position = (offset_position.1, -offset_position.0);
+        offset_position.rotate_right();
     }
 
-    let new_position_in_tile = (
-        (offset_position.0 + offset) / 2,
-        (offset_position.1 + offset) / 2,
-    );
+    let new_position_in_tile = (offset_position + offset) / 2;
 
     let mut x_offset = 0;
     let mut y_offset = 0;
-
-    let new_direction = (new_direction + 4) % 4;
 
     match new_direction {
         0 => x_offset = -offset,
@@ -261,20 +239,20 @@ fn wrap_cube(
         _ => panic!("invalid rotation"),
     }
 
-    let new_position = (
-        (new_position_in_tile.0 + new_tile_index.0 * map_size + x_offset) as usize,
-        (new_position_in_tile.1 + new_tile_index.1 * map_size + y_offset) as usize,
-    );
+    let new_position = (new_position_in_tile
+        + new_tile_index * tile_size as i32
+        + Point2D::new(x_offset, y_offset))
+    .as_upoint2d();
 
     draw_map(
         map,
         current_point,
         current_direction,
-        new_position,
+        &new_position,
         new_direction,
     );
 
-    if map[new_position.1].chars().nth(new_position.0).unwrap() == '#'{
+    if map[new_position.y].chars().nth(new_position.x).unwrap() == '#' {
         return false;
     }
 
@@ -284,48 +262,28 @@ fn wrap_cube(
     true
 }
 
-fn find_new_tile(
-    map: &[String],
-    map_size: i32,
-    tile_index: (i32, i32),
-    current_direction: &mut i32,
-) -> ((i32, i32), i32) {
-    let width_in_tiles = map[0].len() as i32 / map_size;
-    let height_in_tiles = map.len() as i32 / map_size;
+fn find_new_tile(tile_index: UPoint2D, current_direction: &mut i32) -> (Point2D, i32) {
+    // note this mapping only works for input.txt
+    let offset_map = vec![
+        (UPoint2D::new(0, 2), 2, Point2D::new(1, 0), 0),
+        (UPoint2D::new(0, 2), 3, Point2D::new(1, 1), 0),
+        (UPoint2D::new(0, 3), 0, Point2D::new(1, 2), 3),
+        (UPoint2D::new(0, 3), 1, Point2D::new(2, 0), 1),
+        (UPoint2D::new(0, 3), 2, Point2D::new(1, 0), 1),
+        (UPoint2D::new(1, 0), 2, Point2D::new(0, 2), 0),
+        (UPoint2D::new(1, 0), 3, Point2D::new(0, 3), 0),
+        (UPoint2D::new(1, 1), 2, Point2D::new(0, 2), 1),
+        (UPoint2D::new(1, 1), 0, Point2D::new(2, 0), 3),
+        (UPoint2D::new(1, 2), 1, Point2D::new(0, 3), 2),
+        (UPoint2D::new(1, 2), 0, Point2D::new(2, 0), 2),
+        (UPoint2D::new(2, 0), 3, Point2D::new(0, 3), 3),
+        (UPoint2D::new(2, 0), 1, Point2D::new(1, 1), 2),
+        (UPoint2D::new(2, 0), 0, Point2D::new(1, 2), 2),
+    ];
 
-    *current_direction = (*current_direction + 4) % 4;
-
-    let offset_map = vec![(-1, 3, 1, 100), (2, 1, 2, 100), (1, 1, 1, 0), (-2, -1, 2, 1), (1, -1, 1, 3)];
-
-    for offset in offset_map {
-
-        if offset.3 != *current_direction{
-            continue;
-        }
-
-        let tile_index_to_test = (tile_index.0 + offset.0, tile_index.1 + offset.1);
-
-        if tile_index_to_test.0 >= 0
-            && tile_index_to_test.1 >= 0
-            && tile_index_to_test.0 < width_in_tiles
-            && tile_index_to_test.1 < height_in_tiles
-        {
-            // tile is within the map, now check if it is filled
-
-            let position_to_check = (
-                tile_index_to_test.0 * map_size,
-                tile_index_to_test.1 * map_size,
-            );
-            
-            if map[position_to_check.1 as usize]
-                .chars()
-                .nth(position_to_check.0 as usize)
-                .unwrap()
-                != ' '
-            {
-                // tile is filled
-                return (tile_index_to_test, *current_direction + offset.2);
-            }
+    for (source, source_rotation, tile_index_to_test, target_rotation) in offset_map {
+        if source == tile_index && source_rotation == *current_direction {
+            return (tile_index_to_test, target_rotation);
         }
     }
 
@@ -334,54 +292,56 @@ fn find_new_tile(
 
 fn draw_map(
     map: &[String],
-    current_point: &mut (usize, usize),
+    current_point: &mut UPoint2D,
     current_direction: &mut i32,
-    next_point: (usize, usize),
+    next_point: &UPoint2D,
     new_direction: i32,
 ) {
     for (y, line) in map.iter().enumerate() {
+        if y % 8 != 0 && y != current_point.y && y != next_point.y {
+            continue;
+        }
         for (x, char) in line.chars().enumerate() {
-            if current_point.0 == x && current_point.1 == y {
-                match ((*current_direction % 4) + 4) % 4 {
+            if x % 8 != 0 && x != current_point.x && x != next_point.x {
+                continue;
+            }
+            if current_point.x == x && current_point.y == y {
+                match *current_direction {
                     0 => print!(">"),
                     1 => print!("V"),
                     2 => print!("<"),
                     3 => print!("^"),
                     _ => panic!(),
                 }
-            } else if next_point.0 == x && next_point.1 == y {
-                match ((new_direction % 4) + 4) % 4 {
+            } else if next_point.x == x && next_point.y == y {
+                match new_direction {
                     0 => print!(">"),
                     1 => print!("V"),
                     2 => print!("<"),
                     3 => print!("^"),
                     _ => panic!(),
                 }
+            } else if char == '.' {
+                print!(".");
             } else {
-                if char == '.' {
-                    print!(".");
-                } else {
-                    print!("{}", char);
-                }
+                print!("{}", char);
             }
         }
         println!();
     }
-    stdin().read_line(&mut "".to_string());
+    //use std::io::stdin;
+    //stdin().read_line(&mut "".to_string());
 }
 
 fn calculate_next_point(
-    point: &mut (usize, usize),
-    directions: &[(i32, i32)],
+    point: &UPoint2D,
+    directions: &[Point2D],
     current_direction: &i32,
-    width: i32,
-    height: i32,
-) -> (usize, usize) {
-    let direction_index = ((current_direction + 4) % 4) as usize;
-    let x = (width + point.0 as i32 + directions[direction_index].0) % width;
-    let y = (height + point.1 as i32 + directions[direction_index].1) % height;
-
-    (x as usize, y as usize)
+    map_size: &Point2D,
+) -> UPoint2D {
+    (*point + directions[*current_direction as usize])
+        .positive_mod(map_size)
+        .as_upoint2d()
 }
 
 #[cfg(test)]
