@@ -1,6 +1,5 @@
 use std::{
-    collections::{HashMap, VecDeque},
-    io::stdin,
+    collections::{HashMap, VecDeque}
 };
 
 fn main() {
@@ -104,7 +103,8 @@ fn _print(height: &i32, width: &i32, elves: &[(i32, i32)]) {
         }
         println!();
     }
-    stdin().read_line(&mut "".to_owned());
+    //use std::io::stdin;
+    //stdin().read_line(&mut "".to_owned());
 }
 
 fn get_first_free_position(
