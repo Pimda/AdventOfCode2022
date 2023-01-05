@@ -1,6 +1,7 @@
 use std::collections::{HashMap, VecDeque};
 use core::hash::Hash;
 
+/// Helps to quickly switch between dfs and bfs, using simple Vec and VecDeque
 pub enum DirectionalCollection<T> {
     Bfs(VecDeque<T>),
     Dfs(Vec<T>),
@@ -44,6 +45,8 @@ impl<T> DirectionalCollection<T> {
     }
 }
 
+/// Divides items in bins, allowing to either retrieve an item for the lowest or highest key
+/// Uses a VecDeque to save and return the elements, so per bin items are returned FiFo
 pub struct PriorityQueue<K, T> {
     bins: HashMap<K, VecDeque<T>>,
 }

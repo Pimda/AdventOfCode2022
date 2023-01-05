@@ -1,9 +1,9 @@
+use std::{mem, collections::HashMap};
+use aoc_helper::collections::PriorityQueue;
+
+extern crate aoc_helper;
+
 type Bounds = (i32, i32);
-
-pub mod collections;
-use std::{collections::HashMap, mem};
-
-use collections::PriorityQueue;
 
 fn main() {
     let input = read_input("input.txt");

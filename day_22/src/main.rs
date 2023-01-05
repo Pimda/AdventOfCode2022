@@ -1,5 +1,5 @@
 extern crate aoc_helper;
-use aoc_helper::{math, point2d::Point2D, upoint2d::UPoint2D};
+use aoc_helper::{math, vec2d::Vec2D, uvec2d::UVec2D};
 
 fn main() {
     let input = read_input("input.txt");
@@ -46,12 +46,12 @@ fn part_2(map: &[String], moves: &str, map_size: u32) -> usize {
 }
 
 fn walk_path(map: &[String], moves: &str, cube: bool, tile_size: u32) -> usize {
-    let directions = get_directions();
+    let directions = aoc_helper::navigation::get_adjecent_directions();
     let map_size = get_map_size(map);
     let mut current_direction = 0i32;
     let start_x = find_first_available_start_x(map);
     let start_y = 0;
-    let mut current_point = UPoint2D::new(start_x, start_y);
+    let mut current_point = UVec2D::new(start_x, start_y);
     let mut steps_string = "".to_owned();
     for (_, _move) in moves.chars().enumerate() {
         match _move {
@@ -100,7 +100,7 @@ fn walk_path(map: &[String], moves: &str, cube: bool, tile_size: u32) -> usize {
     calculate_score(current_point, current_direction)
 }
 
-fn calculate_score(current_point: UPoint2D, current_direction: i32) -> usize {
+fn calculate_score(current_point: UVec2D, current_direction: i32) -> usize {
     1000 * (current_point.y + 1) + 4 * (current_point.x + 1) + current_direction as usize
 }
 
@@ -109,35 +109,25 @@ fn find_first_available_start_x(map: &[String]) -> usize {
         .expect("map should always have a first row")
         .chars()
         .enumerate()
-        .filter(|(_, char)| *char == '.')
-        .next()
+        .find(|(_, char)| *char == '.')
         .expect("no start position found")
         .0
 }
 
-fn get_map_size(map: &[String]) -> Point2D {
-    Point2D::new(
+fn get_map_size(map: &[String]) -> Vec2D {
+    Vec2D::new(
         map.first().unwrap().chars().count() as i32,
         map.len() as i32,
     )
 }
 
-fn get_directions() -> Vec<Point2D> {
-    vec![
-        Point2D::new(1, 0),
-        Point2D::new(0, 1),
-        Point2D::new(-1, 0),
-        Point2D::new(0, -1),
-    ]
-}
-
 fn walk(
     steps_string: &mut String,
-    current_point: &mut UPoint2D,
-    directions: &[Point2D],
+    current_point: &mut UVec2D,
+    directions: &[Vec2D],
     current_direction: &mut i32,
     map: &[String],
-    map_size: &Point2D,
+    map_size: &Vec2D,
     cube: bool,
     tile_size: u32,
 ) {
@@ -177,12 +167,12 @@ fn walk(
 }
 
 fn find_wrappd_position(
-    next_point: &mut UPoint2D,
-    directions: &[Point2D],
+    next_point: &mut UVec2D,
+    directions: &[Vec2D],
     current_direction: &mut i32,
-    map_size: &Point2D,
+    map_size: &Vec2D,
     map: &[String],
-    current_point: &mut UPoint2D,
+    current_point: &mut UVec2D,
     cube: bool,
     tile_size: u32,
 ) -> bool {
@@ -208,12 +198,12 @@ fn find_wrappd_position(
 
 fn wrap_cube(
     map: &[String],
-    current_point: &mut UPoint2D,
+    current_point: &mut UVec2D,
     current_direction: &mut i32,
     tile_size: u32,
 ) -> bool {
     let tile_index = *current_point / tile_size;
-    let position_in_tile = (*current_point - tile_index * tile_size).as_upoint2d();
+    let position_in_tile = (*current_point - tile_index * tile_size).to_uvec2d_or_throw();
 
     let (new_tile_index, new_direction) = find_new_tile(tile_index, current_direction);
 
@@ -241,8 +231,8 @@ fn wrap_cube(
 
     let new_position = (new_position_in_tile
         + new_tile_index * tile_size as i32
-        + Point2D::new(x_offset, y_offset))
-    .as_upoint2d();
+        + Vec2D::new(x_offset, y_offset))
+    .to_uvec2d_or_throw();
 
     draw_map(
         map,
@@ -262,23 +252,23 @@ fn wrap_cube(
     true
 }
 
-fn find_new_tile(tile_index: UPoint2D, current_direction: &mut i32) -> (Point2D, i32) {
+fn find_new_tile(tile_index: UVec2D, current_direction: &mut i32) -> (Vec2D, i32) {
     // note this mapping only works for input.txt
     let offset_map = vec![
-        (UPoint2D::new(0, 2), 2, Point2D::new(1, 0), 0),
-        (UPoint2D::new(0, 2), 3, Point2D::new(1, 1), 0),
-        (UPoint2D::new(0, 3), 0, Point2D::new(1, 2), 3),
-        (UPoint2D::new(0, 3), 1, Point2D::new(2, 0), 1),
-        (UPoint2D::new(0, 3), 2, Point2D::new(1, 0), 1),
-        (UPoint2D::new(1, 0), 2, Point2D::new(0, 2), 0),
-        (UPoint2D::new(1, 0), 3, Point2D::new(0, 3), 0),
-        (UPoint2D::new(1, 1), 2, Point2D::new(0, 2), 1),
-        (UPoint2D::new(1, 1), 0, Point2D::new(2, 0), 3),
-        (UPoint2D::new(1, 2), 1, Point2D::new(0, 3), 2),
-        (UPoint2D::new(1, 2), 0, Point2D::new(2, 0), 2),
-        (UPoint2D::new(2, 0), 3, Point2D::new(0, 3), 3),
-        (UPoint2D::new(2, 0), 1, Point2D::new(1, 1), 2),
-        (UPoint2D::new(2, 0), 0, Point2D::new(1, 2), 2),
+        (UVec2D::new(0, 2), 2, Vec2D::new(1, 0), 0),
+        (UVec2D::new(0, 2), 3, Vec2D::new(1, 1), 0),
+        (UVec2D::new(0, 3), 0, Vec2D::new(1, 2), 3),
+        (UVec2D::new(0, 3), 1, Vec2D::new(2, 0), 1),
+        (UVec2D::new(0, 3), 2, Vec2D::new(1, 0), 1),
+        (UVec2D::new(1, 0), 2, Vec2D::new(0, 2), 0),
+        (UVec2D::new(1, 0), 3, Vec2D::new(0, 3), 0),
+        (UVec2D::new(1, 1), 2, Vec2D::new(0, 2), 1),
+        (UVec2D::new(1, 1), 0, Vec2D::new(2, 0), 3),
+        (UVec2D::new(1, 2), 1, Vec2D::new(0, 3), 2),
+        (UVec2D::new(1, 2), 0, Vec2D::new(2, 0), 2),
+        (UVec2D::new(2, 0), 3, Vec2D::new(0, 3), 3),
+        (UVec2D::new(2, 0), 1, Vec2D::new(1, 1), 2),
+        (UVec2D::new(2, 0), 0, Vec2D::new(1, 2), 2),
     ];
 
     for (source, source_rotation, tile_index_to_test, target_rotation) in offset_map {
@@ -292,9 +282,9 @@ fn find_new_tile(tile_index: UPoint2D, current_direction: &mut i32) -> (Point2D,
 
 fn draw_map(
     map: &[String],
-    current_point: &mut UPoint2D,
+    current_point: &mut UVec2D,
     current_direction: &mut i32,
-    next_point: &UPoint2D,
+    next_point: &UVec2D,
     new_direction: i32,
 ) {
     for (y, line) in map.iter().enumerate() {
@@ -334,14 +324,14 @@ fn draw_map(
 }
 
 fn calculate_next_point(
-    point: &UPoint2D,
-    directions: &[Point2D],
+    point: &UVec2D,
+    directions: &[Vec2D],
     current_direction: &i32,
-    map_size: &Point2D,
-) -> UPoint2D {
+    map_size: &Vec2D,
+) -> UVec2D {
     (*point + directions[*current_direction as usize])
         .positive_mod(map_size)
-        .as_upoint2d()
+        .to_uvec2d_or_throw()
 }
 
 #[cfg(test)]

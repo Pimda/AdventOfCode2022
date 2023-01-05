@@ -1,4 +1,5 @@
 pub mod math;
-pub mod point2d;
-pub mod upoint2d;
-
+pub mod vec2d;
+pub mod uvec2d;
+pub mod collections;
+pub mod navigation;
