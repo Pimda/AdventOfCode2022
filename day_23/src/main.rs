@@ -1,6 +1,7 @@
-use std::{
-    collections::{HashMap, VecDeque}
-};
+extern crate aoc_helper;
+
+use aoc_helper::{navigation, vec2d::Vec2D};
+use std::collections::{HashMap, VecDeque};
 
 fn main() {
     let input = read_input("input.txt");
@@ -9,7 +10,7 @@ fn main() {
     println!("Part 2: {}", part_2(&input));
 }
 
-fn read_input(filename: &str) -> Vec<(i32, i32)> {
+fn read_input(filename: &str) -> Vec<Vec2D> {
     let string = std::fs::read_to_string(filename).expect("File not found");
 
     let mut elves = vec![];
@@ -17,7 +18,7 @@ fn read_input(filename: &str) -> Vec<(i32, i32)> {
     for (y, line) in string.lines().enumerate() {
         for (x, char) in line.chars().enumerate() {
             if char == '#' {
-                elves.push((x as i32, y as i32));
+                elves.push(Vec2D::new(x as i32, y as i32));
             }
         }
     }
@@ -25,50 +26,49 @@ fn read_input(filename: &str) -> Vec<(i32, i32)> {
     elves
 }
 
-fn part_1(elves: &[(i32, i32)]) -> i32 {
+fn part_1(elves: &[Vec2D]) -> i32 {
     let elves = simulate(elves, 10).0;
 
     empty_spaces_in_smallest_rectangle(elves)
 }
 
-fn part_2(elves: &[(i32, i32)]) -> usize {
+fn part_2(elves: &[Vec2D]) -> usize {
     simulate(elves, usize::max_value()).1
 }
 
-fn empty_spaces_in_smallest_rectangle(elves: Vec<(i32, i32)>) -> i32 {
-    let min_x = elves.iter().map(|e| e.0).min().unwrap();
-    let max_x = elves.iter().map(|e| e.0).max().unwrap();
-    let min_y = elves.iter().map(|e| e.1).min().unwrap();
-    let max_y = elves.iter().map(|e| e.1).max().unwrap();
+fn empty_spaces_in_smallest_rectangle(elves: Vec<Vec2D>) -> i32 {
+    let min_x = elves.iter().map(|e| e.x).min().unwrap();
+    let max_x = elves.iter().map(|e| e.x).max().unwrap();
+    let min_y = elves.iter().map(|e| e.y).min().unwrap();
+    let max_y = elves.iter().map(|e| e.y).max().unwrap();
     let width = max_x - min_x + 1;
     let height = max_y - min_y + 1;
     width * height - elves.len() as i32
 }
 
-fn simulate(elves: &[(i32, i32)], max_turns: usize) -> (Vec<(i32, i32)>, usize) {
+fn simulate(elves: &[Vec2D], max_turns: usize) -> (Vec<Vec2D>, usize) {
     let mut directions = get_directions();
     let mut elves = elves.to_vec();
     for i in 0..max_turns {
         let mut proposals = HashMap::new();
 
-        for elf in elves.iter() {
+        for &elf in elves.iter() {
             if are_surroundings_empty(&elves, elf) {
-                proposals.insert(elf, (elf.0, elf.1));
+                proposals.insert(elf, elf);
                 continue;
             }
 
             let target_position = get_first_free_position(elf, &directions, &elves);
 
             if let Some(new_position) = target_position {
-                let new_position = (new_position.0, new_position.1);
                 proposals.insert(elf, new_position);
                 continue;
             }
 
-            proposals.insert(elf, (elf.0, elf.1));
+            proposals.insert(elf, elf);
         }
 
-        if proposals.iter().all(|(s, t)| *s == t){
+        if proposals.iter().all(|(s, t)| *s == *t) {
             return (vec![], i + 1);
         }
 
@@ -78,7 +78,7 @@ fn simulate(elves: &[(i32, i32)], max_turns: usize) -> (Vec<(i32, i32)>, usize) 
             if proposals.iter().filter(|(_, t)| *t == target).count() == 1 {
                 new_positions.push(*target);
             } else {
-                new_positions.push(**source);
+                new_positions.push(*source);
             }
         }
 
@@ -92,10 +92,10 @@ fn simulate(elves: &[(i32, i32)], max_turns: usize) -> (Vec<(i32, i32)>, usize) 
     (elves, 0)
 }
 
-fn _print(height: &i32, width: &i32, elves: &[(i32, i32)]) {
+fn _print(height: &i32, width: &i32, elves: &[Vec2D]) {
     for y in 0..*height {
         for x in 0..*width {
-            if elves.contains(&(x, y)) {
+            if elves.contains(&Vec2D::new(x, y)) {
                 print!("#");
             } else {
                 print!(".");
@@ -108,32 +108,32 @@ fn _print(height: &i32, width: &i32, elves: &[(i32, i32)]) {
 }
 
 fn get_first_free_position(
-    point: &(i32, i32),
-    directions: &VecDeque<(i32, i32)>,
-    elves: &[(i32, i32)],
-) -> Option<(i32, i32)> {
+    point: Vec2D,
+    directions: &VecDeque<Vec2D>,
+    elves: &[Vec2D],
+) -> Option<Vec2D> {
     for direction in directions {
-        let target_position = (point.0 + direction.0, point.1 + direction.1);
+        let target_position = point + *direction;
 
-        if direction.0 != 0 {
-            let top = (target_position.0, target_position.1 - 1);
-            let bottom = (target_position.0, target_position.1 + 1);
+        if direction.x != 0 {
+            let top = Vec2D::new(target_position.x, target_position.y - 1);
+            let bottom = Vec2D::new(target_position.x, target_position.y + 1);
 
-            if is_position_empty(&top, elves)
-                && is_position_empty(&target_position, elves)
-                && is_position_empty(&bottom, elves)
+            if is_position_empty(top, elves)
+                && is_position_empty(target_position, elves)
+                && is_position_empty(bottom, elves)
             {
                 return Some(target_position);
             }
         }
 
-        if direction.1 != 0 {
-            let left = (target_position.0 - 1, target_position.1);
-            let right = (target_position.0 + 1, target_position.1);
+        if direction.y != 0 {
+            let left = Vec2D::new(target_position.x - 1, target_position.y);
+            let right = Vec2D::new(target_position.x + 1, target_position.y);
 
-            if is_position_empty(&left, elves)
-                && is_position_empty(&target_position, elves)
-                && is_position_empty(&right, elves)
+            if is_position_empty(left, elves)
+                && is_position_empty(target_position, elves)
+                && is_position_empty(right, elves)
             {
                 return Some(target_position);
             }
@@ -142,23 +142,9 @@ fn get_first_free_position(
     None
 }
 
-fn are_surroundings_empty(elves: &[(i32, i32)], point: &(i32, i32)) -> bool {
-    let directions = vec![
-        (1, 0),
-        (1, 1),
-        (0, 1),
-        (-1, 1),
-        (-1, 0),
-        (-1, -1),
-        (0, -1),
-        (1, -1),
-    ];
-
-    for direction in directions {
-        let x = point.0 + direction.0;
-        let y = point.1 + direction.1;
-
-        if !is_position_empty(&(x, y), elves) {
+fn are_surroundings_empty(elves: &[Vec2D], point: Vec2D) -> bool {
+    for direction in navigation::get_all_surrounding_directions() {
+        if !is_position_empty(point + direction, elves) {
             return false;
         }
     }
@@ -166,23 +152,21 @@ fn are_surroundings_empty(elves: &[(i32, i32)], point: &(i32, i32)) -> bool {
     true
 }
 
-fn is_position_empty(point: &(i32, i32), elves: &[(i32, i32)]) -> bool {
-    if elves.contains(&(point.0, point.1)) {
+fn is_position_empty(point: Vec2D, elves: &[Vec2D]) -> bool {
+    if elves.contains(&point) {
         return false;
     }
 
     true
 }
 
-fn get_directions() -> VecDeque<(i32, i32)> {
-    let mut directions = VecDeque::new();
-
-    directions.push_back((0, -1));
-    directions.push_back((0, 1));
-    directions.push_back((-1, 0));
-    directions.push_back((1, 0));
-
-    directions
+fn get_directions() -> VecDeque<Vec2D> {
+    VecDeque::from([
+        Vec2D::new(0, -1),
+        Vec2D::new(0, 1),
+        Vec2D::new(-1, 0),
+        Vec2D::new(1, 0),
+    ])
 }
 
 #[cfg(test)]

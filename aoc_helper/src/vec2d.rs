@@ -3,7 +3,7 @@ use std::{fmt::Display, ops::{Mul, Sub, Add, Div}};
 use crate::{uvec2d::UVec2D, math};
 
 /// Can be used when negative values are possible
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash)]
 pub struct Vec2D{
     pub x: i32,
     pub y: i32
@@ -35,6 +35,15 @@ impl Vec2D {
     pub fn positive_mod(&self, modulus: &Vec2D) -> Vec2D{
         Vec2D::new(math::positive_mod(self.x, modulus.x), math::positive_mod(self.y, modulus.y))
     }
+
+    pub fn manhattan_distance(self, target: Vec2D) -> u32 {
+        ((self.x - target.x).abs() + (self.y - target.y).abs()) as u32
+    }
+
+    pub fn is_in_bounds(self, bounds: Vec2D) -> bool{
+        self.x >= 0 && self.y >= 0 && self.x < bounds.x && self.y < bounds.y
+    }
+
 }
 
 impl Add<Vec2D> for Vec2D{
