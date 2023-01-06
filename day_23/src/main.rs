@@ -1,6 +1,6 @@
 extern crate aoc_helper;
 
-use aoc_helper::{navigation, vec2d::Vec2D};
+use aoc_helper::{navigation, vectors::Vec2D};
 use std::collections::{HashMap, VecDeque};
 
 fn main() {

@@ -1,4 +1,4 @@
-use crate::vec2d::Vec2D;
+use crate::vectors::Vec2D;
 
 pub fn get_adjecent_directions() -> [Vec2D; 4] {
     [

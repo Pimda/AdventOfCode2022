@@ -1,5 +1,5 @@
 use std::{mem, collections::HashMap};
-use aoc_helper::{collections::PriorityQueue, vec2d::Vec2D, math, navigation};
+use aoc_helper::{collections::PriorityQueue, vectors::Vec2D, math, navigation};
 
 extern crate aoc_helper;
 

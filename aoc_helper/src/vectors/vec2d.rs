@@ -1,6 +1,6 @@
 use std::{fmt::Display, ops::{Mul, Sub, Add, Div}};
 
-use crate::{uvec2d::UVec2D, math};
+use crate::{vectors::UVec2D, math};
 
 /// Can be used when negative values are possible
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]

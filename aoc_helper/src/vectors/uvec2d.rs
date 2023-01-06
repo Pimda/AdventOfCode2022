@@ -3,7 +3,7 @@ use std::{
     ops::{Mul, Sub, Div, Add},
 };
 
-use crate::vec2d::Vec2D;
+use crate::vectors::Vec2D;
 
 /// Can be used when indexing into arrays is required
 #[derive(Clone, Copy, PartialEq, Eq)]
