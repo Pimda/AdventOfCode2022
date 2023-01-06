@@ -1,4 +1,4 @@
-use aoc_helper::Runner;
+use aoc_helper::{math, runner::{Runner, ProcessAndWrite}};
 mod test;
 
 fn main() {
