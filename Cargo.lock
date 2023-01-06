@@ -9,6 +9,9 @@ version = "0.1.0"
 [[package]]
 name = "day_1"
 version = "0.1.0"
+dependencies = [
+ "aoc_helper",
+]
 
 [[package]]
 name = "day_10"
