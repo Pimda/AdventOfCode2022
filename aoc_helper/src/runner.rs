@@ -1,4 +1,4 @@
-use std::fmt::{Display, Debug};
+use std::fmt::{Debug, Display};
 
 pub struct Runner<Input> {
     input: Input,
@@ -28,44 +28,122 @@ impl<I> Runner<I> {
             input: input_parser(input),
         }
     }
+}
 
-    pub fn process_and_write_part_1<F, O>(&self, processor: F)
+pub trait ProcessAndWrite<'a, I> {
+    fn process_and_write<F, O>(&'a self, string: &str, processor: F)
     where
-        F: Fn(&I) -> O,
+        F: Fn(I) -> O,
+        O: Display;
+
+    fn process_and_write_part_1<F, O>(&'a self, processor: F)
+    where
+        F: Fn(I) -> O,
+        O: Display;
+
+    fn process_and_write_part_2<F, O>(&'a self, processor: F)
+    where
+        F: Fn(I) -> O,
+        O: Display;
+}
+
+impl<'a, I> ProcessAndWrite<'a, &'a [I]> for Runner<Vec<I>> {
+    fn process_and_write<F, O>(&'a self, string: &str, processor: F)
+    where
+        F: Fn(&'a [I]) -> O,
+        O: Display,
+    {
+        let now = start_timer();
+        let result = processor(&self.input);
+        stop_timer_and_write(now, string, result);
+    }
+
+    fn process_and_write_part_1<F, O>(&'a self, processor: F)
+    where
+        F: Fn(&'a [I]) -> O,
         O: Display,
     {
         self.process_and_write("Part 1", processor)
     }
 
-    pub fn process_and_write_part_2<F, O>(&self, processor: F)
+    fn process_and_write_part_2<F, O>(&'a self, processor: F)
     where
-        F: Fn(&I) -> O,
+        F: Fn(&'a [I]) -> O,
         O: Display,
     {
         self.process_and_write("Part 2", processor)
     }
+}
 
-    fn process_and_write<F, O>(&self, string: &str, processor: F)
+impl<'a, I> ProcessAndWrite<'a, &'a I> for Runner<I> {
+    fn process_and_write<F, O>(&'a self, string: &str, processor: F)
     where
-        F: Fn(&I) -> O,
+        F: Fn(&'a I) -> O,
         O: Display,
     {
-        use std::time::Instant;
-
-        let now = Instant::now();
+        let now = start_timer();
         let result = processor(&self.input);
-        let elapsed = now.elapsed();
-
-        println!("{}", string);
-        println!("Duration: {:#?}", elapsed);
-        println!("----------------");
-        println!("{}", result);
-        println!();
+        stop_timer_and_write(now, string, result);
     }
 
-    pub fn process_and_assert<F, O>(&self, processor: F, expected: O)
+    fn process_and_write_part_1<F, O>(&'a self, processor: F)
     where
-        F: Fn(&I) -> O,
+        F: Fn(&'a I) -> O,
+        O: Display,
+    {
+        self.process_and_write("Part 1", processor)
+    }
+
+    fn process_and_write_part_2<F, O>(&'a self, processor: F)
+    where
+        F: Fn(&'a I) -> O,
+        O: Display,
+    {
+        self.process_and_write("Part 2", processor)
+    }
+}
+
+use std::time::Instant;
+
+fn start_timer() -> Instant {
+    Instant::now()
+}
+
+fn stop_timer_and_write<O>(now: Instant, string: &str, result: O)
+where
+    O: Display,
+{
+    let elapsed = now.elapsed();
+    println!("{}", string);
+    println!("Duration: {:#?}", elapsed);
+    println!("----------------");
+    println!("{}", result);
+    println!();
+}
+
+pub trait ProcessAndAssert<'a, I> {
+    fn process_and_assert<F, O>(&'a self, processor: F, expected: O)
+    where
+        F: Fn(I) -> O,
+        O: PartialEq,
+        O: Debug;
+}
+
+impl<'a, I> ProcessAndAssert<'a, &'a [I]> for Runner<Vec<I>> {
+    fn process_and_assert<F, O>(&'a self, processor: F, expected: O)
+    where
+        F: Fn(&'a [I]) -> O,
+        O: PartialEq,
+        O: Debug,
+    {
+        assert_eq!(processor(&self.input), expected)
+    }
+}
+
+impl<'a, I> ProcessAndAssert<'a, &'a I> for Runner<I> {
+    fn process_and_assert<F, O>(&'a self, processor: F, expected: O)
+    where
+        F: Fn(&'a I) -> O,
         O: PartialEq,
         O: Debug,
     {

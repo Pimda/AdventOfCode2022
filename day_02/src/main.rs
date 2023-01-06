@@ -1,12 +1,13 @@
-fn main() {
-    let moves = parse_input("input.txt");
+mod test;
+use aoc_helper::{math, runner::{Runner, ProcessAndWrite}};
 
-    println!("answer 1: {}", part_1(&moves));
-    println!("answer 2: {}", part_2(&moves));
+fn main() {
+    let runner = Runner::from_input_file(parse);
+    runner.process_and_write_part_1(part_1);
+    runner.process_and_write_part_2(part_2);
 }
 
-fn parse_input(filename: &str) -> Vec<Vec<String>> {
-    let input = std::fs::read_to_string(filename).expect("could not read file");
+fn parse(input: String) -> Vec<Vec<String>> {
     input
         .lines()
         .map(|l| l.split(' ').map(|t| t.to_string()).collect())
@@ -17,23 +18,14 @@ fn part_1(moves: &[Vec<String>]) -> i32 {
     moves
         .iter()
         .map(|mov| {
-            if let [a, b] = &mov[..] {
-                let a = parse_left_input(a);
-                let b = parse_right_input(b);
+            let [a, b] = &mov[..] else{panic!()};
+            let a = parse_left_input(a);
+            let b = parse_right_input(b);
 
-                let win = (((b - a) % 3) + 3) % 3;
+            let win = math::positive_mod(b - a, 3);
+            let score = (win + 1) % 3 * 3;
 
-                let score = match win {
-                    0 => 3,
-                    1 => 6,
-                    2 => 0,
-                    _ => panic!("Game state invalid"),
-                };
-
-                score + b
-            } else {
-                panic!()
-            }
+            score + b
         })
         .sum()
 }
@@ -42,26 +34,19 @@ fn part_2(moves: &[Vec<String>]) -> i32 {
     moves
         .iter()
         .map(|mov| {
-            if let [a, b] = &mov[..] {
+            let [a, b] = &mov[..] else{panic!()};
+            {
                 let a = parse_left_input(a);
                 let outcome = parse_outcome(b);
 
                 let mut b = (a + outcome) % 3;
-
                 if b == 0 {
                     b = 3;
                 }
 
-                let score = match outcome {
-                    -1 => 0,
-                    0 => 3,
-                    1 => 6,
-                    _ => panic!("Game state invalid"),
-                };
+                let score = (outcome + 1) * 3;
 
                 score + b
-            } else {
-                panic!()
             }
         })
         .sum()
@@ -91,20 +76,5 @@ fn parse_outcome(b: &str) -> i32 {
         "Y" => 0,
         "Z" => 1,
         _ => panic!("Invalid input"),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn part_1_works() {
-        assert_eq!(part_1(&parse_input("test.txt")), 15);
-    }
-
-    #[test]
-    fn part_2_works() {
-        assert_eq!(part_2(&parse_input("test.txt")), 12);
     }
 }

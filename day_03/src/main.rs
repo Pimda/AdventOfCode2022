@@ -1,19 +1,17 @@
-use std::fs;
+use aoc_helper::{runner::{Runner, ProcessAndWrite}};
+mod test;
 
 fn main() {
-    let lines = get_lines_from_file("input.txt");
-
-    println!("answer 1: {}", part1(&lines));
-    println!("answer 2: {}", part2(&lines));
+    let runner = Runner::from_input_file(parse);
+    runner.process_and_write_part_1(part_1);
+    runner.process_and_write_part_2(part_2);
 }
 
-fn get_lines_from_file(filename: &str) -> Vec<String> {
-    let file = fs::read_to_string(filename).expect("File not found");
-    let lines: Vec<String> = file.lines().map(|s| s.to_owned()).collect();
-    lines
+fn parse(input: String) -> Vec<String> {
+    input.lines().map(|s| s.to_owned()).collect()
 }
 
-fn part1(lines: &[String]) -> i32 {
+fn part_1(lines: &[String]) -> i32 {
     lines
         .iter()
         .map(|line| {
@@ -27,7 +25,7 @@ fn part1(lines: &[String]) -> i32 {
         .sum()
 }
 
-fn part2(lines: &[String]) -> i32 {
+fn part_2(lines: &[String]) -> i32 {
     lines.chunks(3).map(find_common_char).map(get_value).sum()
 }
 
@@ -41,27 +39,13 @@ fn find_common_char(strings: &[String]) -> char {
     panic!("Not enough strings supplied");
 }
 
+/// Returns value of letter, where upper case is higher than lower case, one based.
 fn get_value(char: char) -> i32 {
-    let mut value = char as i32 - 'a' as i32;
+    let value = char as i32 - 'a' as i32;
     if value < 0 {
-        value += 58; // diff between 'a' and 'A'
+        return value + 58 + 1; // 58 is the diff between 'a' and 'A'
     }
-    value + 1
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_part_1() {
-        let lines = get_lines_from_file("test.txt");
-        assert_eq!(part1(&lines), 157);
-    }
-
-    #[test]
-    fn test_part_2() {
-        let lines = get_lines_from_file("test.txt");
-        assert_eq!(part2(&lines), 70);
+    else {
+        return value + 1
     }
 }

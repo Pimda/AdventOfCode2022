@@ -1,30 +1,36 @@
+use aoc_helper::runner::{ProcessAndWrite, Runner};
+mod test;
+
 type Stack = Vec<char>;
 type Step = (u32, usize, usize);
+type Input = (Vec<Stack>, Vec<Step>);
 
 fn main() {
-    let lines = read_input("input.txt");
-
-    let (containers, steps) = parse_input(lines);
-
-    let top_row = part_1(&containers, &steps);
-
-    println!("part 1");
-    print_top_row(top_row);
-
-    let top_row = part_2(&containers, &steps);
-
-    println!("part 2");
-    print_top_row(top_row);
+    let runner = Runner::from_input_file(parse);
+    runner.process_and_write_part_1(part_1);
+    runner.process_and_write_part_2(part_2);
 }
 
-fn print_top_row(top_row: Vec<char>) {
-    for container in top_row {
-        print!("{}", container);
-    }
-    println!();
+fn parse(string: String) -> Input {
+    let lines = string
+        .lines()
+        .map(|l| l.to_owned())
+        .collect::<Vec<String>>();
+
+    let [board, steps] = lines
+        .split(|line| line.is_empty())
+        .collect::<Vec<&[String]>>()[..]
+    else {panic!()};
+
+    let stacks = parse_containers(board);
+    let steps = parse_steps(steps);
+
+    (stacks, steps)
 }
 
-fn part_1(stacks: &[Stack], steps: &[Step]) -> Vec<char> {
+fn part_1(input: &Input) -> String {
+    let (stacks, steps) = input;
+
     let mut stacks = stacks.to_vec();
 
     for step in steps {
@@ -34,10 +40,11 @@ fn part_1(stacks: &[Stack], steps: &[Step]) -> Vec<char> {
         }
     }
 
-    get_top_row(stacks)
+    row_to_string(get_top_row(stacks))
 }
 
-fn part_2(stacks: &[Stack], steps: &[Step]) -> Vec<char> {
+fn part_2(input: &Input) -> String {
+    let (stacks, steps) = input;
     let mut stacks = stacks.to_vec();
 
     for step in steps {
@@ -52,47 +59,7 @@ fn part_2(stacks: &[Stack], steps: &[Step]) -> Vec<char> {
         }
     }
 
-    get_top_row(stacks)
-}
-
-fn get_top_row(stacks: Vec<Stack>) -> Vec<char> {
-    stacks
-        .iter()
-        .map(|stack| stack.last().expect("").to_owned())
-        .collect()
-}
-
-fn read_input(filename: &str) -> Vec<String> {
-    let content = std::fs::read_to_string(filename).expect("Could not find file");
-    content.lines().map(|l| l.to_owned()).collect()
-}
-
-fn parse_input(lines: Vec<String>) -> (Vec<Stack>, Vec<Step>) {
-    if let [board, steps] = lines
-        .split(|line| line.is_empty())
-        .collect::<Vec<&[String]>>()[..]
-    {
-        let stacks = parse_containers(board);
-        let steps = parse_steps(steps);
-
-        (stacks, steps)
-    } else {
-        panic!()
-    }
-}
-
-fn parse_steps(steps: &[String]) -> Vec<Step> {
-    steps
-        .iter()
-        .map(|string| {
-            let parts = &mut string.split(' ');
-            (
-                parts.nth(1).unwrap().parse().unwrap(),
-                parts.nth(1).unwrap().parse().unwrap(),
-                parts.nth(1).unwrap().parse().unwrap(),
-            )
-        })
-        .collect()
+    row_to_string(get_top_row(stacks))
 }
 
 fn parse_containers(board: &[String]) -> Vec<Stack> {
@@ -123,36 +90,27 @@ fn parse_containers(board: &[String]) -> Vec<Stack> {
     stacks
 }
 
-fn _print_steps(steps: &[Step]) {
-    for step in steps {
-        println!("move {} from {} to {}", step.0, step.1, step.2);
-    }
+fn parse_steps(steps: &[String]) -> Vec<Step> {
+    steps
+        .iter()
+        .map(|string| {
+            let parts = &mut string.split(' ');
+            (
+                parts.nth(1).unwrap().parse().unwrap(),
+                parts.nth(1).unwrap().parse().unwrap(),
+                parts.nth(1).unwrap().parse().unwrap(),
+            )
+        })
+        .collect()
 }
 
-fn _print_containers(containers: &[Stack]) {
-    for line in containers {
-        for container in line {
-            print!("[{}] ", container);
-        }
-        println!();
-    }
+fn get_top_row(stacks: Vec<Stack>) -> Vec<char> {
+    stacks
+        .iter()
+        .map(|stack| stack.last().expect("").to_owned())
+        .collect()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_part_1() {
-        let lines = read_input("test.txt");
-        let (containers, steps) = parse_input(lines);
-        assert_eq!(part_1(&containers, &steps), vec!['C', 'M', 'Z']);
-    }
-
-    #[test]
-    fn test_part_2() {
-        let lines = read_input("test.txt");
-        let (containers, steps) = parse_input(lines);
-        assert_eq!(part_2(&containers, &steps), vec!['M', 'C', 'D']);
-    }
+fn row_to_string(top_row: Vec<char>) -> String {
+    top_row.into_iter().collect()
 }
